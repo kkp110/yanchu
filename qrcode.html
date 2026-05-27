@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>焰厨 - 扫码菜单</title>
+  <style>
+    :root{--accent:#c82712;--gold:#d4a017}
+    *{box-sizing:border-box}
+    body{
+      font-family:'PingFang SC','Microsoft YaHei',sans-serif;
+      margin:0;min-height:100vh;
+      background:#0a0a0a;
+      background-image:
+        radial-gradient(ellipse 600px 400px at 50% -10%, rgba(255,107,53,0.15) 0%, transparent 60%),
+        radial-gradient(ellipse 500px 350px at 50% 85%, rgba(220,47,2,0.06) 0%, transparent 50%);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      color:#fff;padding:20px;text-align:center;
+    }
+    .logo{width:180px;margin-bottom:12px}
+    .qr-box{
+      background:#fff;padding:24px;border-radius:20px;
+      box-shadow:0 8px 40px rgba(255,107,53,0.2);
+      margin:16px 0;
+    }
+    #qrCode{display:block;width:260px;height:260px}
+    .url-box{
+      background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+      border-radius:12px;padding:12px 20px;margin:12px 0;
+      font-size:0.9rem;color:rgba(255,255,255,0.7);
+      word-break:break-all;max-width:340px;
+    }
+    .tip{color:rgba(255,255,255,0.45);font-size:0.85rem;margin-top:16px}
+    h2{
+      font-weight:900;
+      background:linear-gradient(180deg,#ffba08,#e85d04,#dc2f02);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+      background-clip:text;margin:0;
+    }
+  </style>
+</head>
+<body>
+  <img src="images/logo.svg" alt="焰厨" class="logo" />
+  <h2>微信扫一扫 立即点菜</h2>
+  <div class="qr-box"><canvas id="qrCode"></canvas></div>
+  <div class="url-box" id="urlDisplay"></div>
+  <p class="tip">将此二维码打印张贴在餐桌上，顾客扫码即可查看菜单</p>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+  <script>
+    const PUBLIC_URL = 'https://foo-juice-filter-establishing.trycloudflare.com';
+    document.getElementById('urlDisplay').textContent = PUBLIC_URL;
+    if (window.QRCode) {
+      QRCode.toCanvas(document.getElementById('qrCode'), PUBLIC_URL, {
+        width: 260,
+        color: { dark: '#8B0000', light: '#ffffff' }
+      });
+    }
+  </script>
+</body>
+</html>

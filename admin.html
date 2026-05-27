@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>菜单后台 - 焰厨</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .tabs{display:flex;gap:4px;padding:12px 16px 0;max-width:900px;margin:0 auto}
+    .tab-btn{padding:10px 20px;border:0;border-radius:10px 10px 0 0;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);cursor:pointer;font-size:0.9rem}
+    .tab-btn.active{background:rgba(255,255,255,0.1);color:#fff}
+    .tab-content{display:none}
+    .tab-content.active{display:block}
+    .qr-upload-section{text-align:center;padding:16px 0}
+    .qr-upload-section img{max-width:200px;border-radius:12px;margin:10px 0;border:2px solid rgba(255,255,255,0.1)}
+    .order-item{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;margin-bottom:10px}
+    .order-item .order-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+    .order-item .order-id{font-size:0.78rem;color:rgba(255,255,255,0.4)}
+    .order-item .order-total{font-weight:700;color:var(--accent);font-size:1.1rem}
+    .order-item .order-meta{font-size:0.82rem;color:rgba(255,255,255,0.5);margin-top:4px}
+    .order-item .order-dishes{font-size:0.85rem;color:rgba(255,255,255,0.7);margin-top:8px;padding-left:16px}
+    .order-item .order-status{display:inline-block;padding:3px 10px;border-radius:999px;font-size:0.75rem}
+    .status-done{background:rgba(40,167,69,0.2);color:#5cb85c}
+    .status-new{background:rgba(255,193,7,0.2);color:#ffc107}
+    #orderListContainer{max-height:400px;overflow-y:auto}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="logo" style="width:140px;height:56px;"><img src="images/logo.svg" alt="焰厨" /></div>
+    <p class="subtitle">后台管理 — 菜单 · 订单 · 收款码</p>
+  </header>
+
+  <main>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="tab-menu">菜品管理</button>
+      <button class="tab-btn" data-tab="tab-orders">订单查看</button>
+      <button class="tab-btn" data-tab="tab-payment">收款码</button>
+    </div>
+
+    <!-- 菜品管理 -->
+    <div id="tab-menu" class="tab-content active">
+      <section class="admin-panel">
+        <div class="panel-card admin-card">
+          <h2>添加新菜品</h2>
+          <form id="itemForm">
+            <label>菜名<input name="name" required /></label>
+            <label>价格<input name="price" type="number" min="0" step="0.01" required /></label>
+            <label>分类<input name="category" placeholder="热菜、冷盘等" required /></label>
+            <label>描述<textarea name="desc" rows="3"></textarea></label>
+            <label>今日是否有货
+              <select name="availableToday">
+                <option value="true">有货</option>
+                <option value="false">售罄</option>
+              </select>
+            </label>
+            <label>菜品图片<input id="imageInput" type="file" accept="image/*" /></label>
+            <button type="submit">保存菜品</button>
+          </form>
+          <p class="hint">提交后立即出现在顾客页面。</p>
+        </div>
+        <div class="panel-card admin-card">
+          <h2>当前菜品</h2>
+          <div id="itemList" class="item-list"></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- 订单查看 -->
+    <div id="tab-orders" class="tab-content">
+      <section style="max-width:900px;margin:0 auto;padding:12px 16px">
+        <div class="panel-card admin-card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <h2>订单列表</h2>
+            <button id="refreshOrders" style="background:var(--accent);color:#fff;border:0;padding:6px 14px;border-radius:6px;cursor:pointer">刷新</button>
+          </div>
+          <div id="orderListContainer"></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- 收款码 -->
+    <div id="tab-payment" class="tab-content">
+      <section style="max-width:900px;margin:0 auto;padding:12px 16px">
+        <div class="panel-card admin-card">
+          <h2>上传收款码</h2>
+          <p style="color:rgba(255,255,255,0.5);font-size:0.9rem">顾客下单后将看到此收款码，按订单金额付款。</p>
+          <div class="qr-upload-section">
+            <img id="currentQR" alt="当前收款码" style="display:none" />
+            <p id="noQR" style="color:rgba(255,255,255,0.3)">尚未设置收款码</p>
+            <input id="paymentQRInput" type="file" accept="image/*" style="margin:10px 0" />
+            <br/>
+            <button id="savePaymentQR" style="background:var(--accent);color:#fff;border:0;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:0.95rem">保存收款码</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <a class="admin-link" href="index.html" style="display:block;text-align:center;margin:20px 0">返回菜单页面</a>
+  </main>
+
+  <script src="admin.js" defer></script>
+</body>
+</html>

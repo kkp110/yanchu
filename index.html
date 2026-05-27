@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>焰厨 - 菜单</title>
+  <link rel="stylesheet" href="styles.css" />
+  <meta name="description" content="焰厨菜单，可自主更新菜品和价格。">
+</head>
+<body>
+  <header class="site-header">
+    <div class="logo"><img src="images/logo.svg" alt="焰厨" /></div>
+    <p class="subtitle">火候见真功 · 一味入魂</p>
+  </header>
+
+  <main>
+    <div class="top-row">
+      <div class="controls">
+        <input id="search" placeholder="搜索菜名、分类或价格..." />
+      </div>
+      <button id="cartBtn" class="cart-btn">
+        <span class="cart-icon">🛒</span>
+        <span class="cart-count" id="cartCount">0</span>
+      </button>
+    </div>
+
+    <section id="menuGrid" class="grid" aria-live="polite"></section>
+
+    <section class="info-panel">
+      <div class="panel-card">
+        <h2>扫码打开菜单</h2>
+        <canvas id="qrCode" aria-label="二维码"></canvas>
+        <p>顾客可使用微信扫一扫直接访问本菜单。</p>
+      </div>
+      <div class="panel-card">
+        <h2>下单说明</h2>
+        <p>点击菜品加入购物车，选好后填写用餐人数，提交订单。</p>
+        <p>下单后扫描商家收款码完成支付。</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- 购物车侧栏 -->
+  <div id="cartOverlay" class="cart-overlay" aria-hidden="true"></div>
+  <aside id="cartPanel" class="cart-panel" aria-hidden="true">
+    <div class="cart-header">
+      <h3>我的订单</h3>
+      <button id="cartClose" class="close-btn" aria-label="关闭">×</button>
+    </div>
+    <div class="cart-body">
+      <div class="cart-people">
+        <label>用餐人数</label>
+        <div class="people-input">
+          <button id="peopleMinus">−</button>
+          <span id="peopleNum">2</span>
+          <button id="peoplePlus">+</button>
+        </div>
+      </div>
+      <div id="cartItems" class="cart-items"></div>
+      <div class="cart-empty" id="cartEmpty">购物车是空的，点击菜品添加</div>
+    </div>
+    <div class="cart-footer">
+      <div class="cart-total">合计：<span id="cartTotal">￥0.00</span></div>
+      <button id="orderBtn" class="order-btn" disabled>提交订单</button>
+    </div>
+  </aside>
+
+  <!-- 菜品详情弹窗 -->
+  <div id="modal" class="modal" aria-hidden="true">
+    <div class="modal-inner">
+      <button id="modalClose" class="close" aria-label="关闭">×</button>
+      <img id="modalImg" alt="菜品图片" />
+      <h2 id="modalTitle"></h2>
+      <p id="modalDesc"></p>
+      <p class="price" id="modalPrice"></p>
+      <p id="modalAvail" class="avail"></p>
+      <button id="modalAddCart" class="add-cart-btn">加入购物车</button>
+    </div>
+  </div>
+
+  <!-- 支付弹窗 -->
+  <div id="payModal" class="modal" aria-hidden="true">
+    <div class="modal-inner pay-modal">
+      <button id="payClose" class="close" aria-label="关闭">×</button>
+      <h2>请扫码支付</h2>
+      <p class="pay-amount" id="payAmount"></p>
+      <img id="payQR" alt="收款码" class="pay-qr" />
+      <p class="pay-tip">支付完成后请向服务员出示</p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+  <script src="app.js" defer></script>
+</body>
+</html>
