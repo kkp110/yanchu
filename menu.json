@@ -71,7 +71,7 @@
     "img": "images/suancaiyu.svg",
     "availableToday": true,
     "category": "主菜",
-    "recommended": true
+    "recommended": false
   },
   {
     "id": 10,
@@ -82,14 +82,5 @@
     "availableToday": true,
     "img": "images/default.svg",
     "recommended": true
-  },
-  {
-    "id": 11,
-    "name": "11",
-    "price": 1121,
-    "category": "11",
-    "desc": "1",
-    "availableToday": true,
-    "img": "images/default.svg"
   }
 ]

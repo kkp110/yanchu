@@ -110,10 +110,11 @@ async function saveMenu() {
   } catch(e) { showToast('保存失败: ' + e.message); }
 }
 
-// 手机拍照后立即预览
-var imgInputEl = document.getElementById('imageInput');
-if (imgInputEl) {
-  imgInputEl.addEventListener('change', function() {
+// 拍照/选图后立即预览（支持两个 input）
+function bindImagePreview(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('change', function() {
     var f = this.files?.[0];
     if (!f) return;
     var nameEl = document.getElementById('imgName');
@@ -126,6 +127,15 @@ if (imgInputEl) {
     reader.readAsDataURL(f);
   });
 }
+bindImagePreview('imageInput');
+bindImagePreview('imageInput2');
+
+// 获取选中的图片文件（从两个 input 中取）
+function getSelectedImage() {
+  var f1 = document.getElementById('imageInput')?.files?.[0];
+  var f2 = document.getElementById('imageInput2')?.files?.[0];
+  return f2 || f1;
+}
 
 $('#itemForm').addEventListener('submit', async function(e) {
   e.preventDefault();
@@ -136,8 +146,7 @@ $('#itemForm').addEventListener('submit', async function(e) {
   if (isNaN(price) || price < 1) return showToast('价格最低 1 元');
 
   // 图片压缩后存为 base64（手机端最可靠，不需要上传）
-  const imgInput = document.getElementById('imageInput');
-  const imgFile = imgInput?.files?.[0];
+  const imgFile = getSelectedImage();
   let imgPath = form.dataset.editIdx ? (menu[parseInt(form.dataset.editIdx)]?.img || 'images/default.svg') : 'images/default.svg';
 
   if (imgFile && imgFile.size > 0) {
@@ -420,29 +429,54 @@ function playBeep() {
 var bigPopup = document.createElement('div');
 bigPopup.id = 'bigOrderPopup';
 bigPopup.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.93);display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center';
-bigPopup.innerHTML = '<div id="bigOrderContent" style="color:#fff;font-size:22px;line-height:2;font-weight:700;max-height:60vh;overflow:auto"></div><div style="display:flex;gap:12px;margin-top:16px"><button id="bigOrderPrint" style="padding:14px 36px;border-radius:28px;border:0;background:#fff;color:#e8452d;font-size:18px;font-weight:800;cursor:pointer">🖨 打印小票</button><button id="bigOrderClose" style="padding:14px 36px;border-radius:28px;border:0;background:#e8452d;color:#fff;font-size:18px;font-weight:800;cursor:pointer">我知道了</button></div>';
+bigPopup.innerHTML = '<div id="bigOrderContent" style="color:#fff;font-size:22px;line-height:2;font-weight:700;max-height:55vh;overflow:auto"></div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;justify-content:center"><button id="bigPrintKitchen" style="padding:12px 20px;border-radius:24px;border:0;background:#ff6b35;color:#fff;font-size:16px;font-weight:800;cursor:pointer">🖨 后厨单</button><button id="bigPrintCustomer" style="padding:12px 20px;border-radius:24px;border:2px solid #fff;background:transparent;color:#fff;font-size:16px;font-weight:800;cursor:pointer">🧾 顾客单</button><button id="bigOrderClose" style="padding:12px 20px;border-radius:24px;border:0;background:rgba(255,255,255,0.2);color:#fff;font-size:16px;font-weight:600;cursor:pointer">关闭</button></div>';
 document.body.appendChild(bigPopup);
 document.getElementById('bigOrderClose').addEventListener('click', function() { bigPopup.style.display = 'none'; stopAlarm(); });
 document.getElementById('bigOrderClose').addEventListener('touchend', function(e) { e.preventDefault(); bigPopup.style.display = 'none'; stopAlarm(); });
-document.getElementById('bigOrderPrint').addEventListener('click', function() { printReceipt(window._lastOrder); });
-document.getElementById('bigOrderPrint').addEventListener('touchend', function(e) { e.preventDefault(); printReceipt(window._lastOrder); });
+document.getElementById('bigPrintKitchen').addEventListener('click', function() { printKitchen(window._lastOrder); });
+document.getElementById('bigPrintKitchen').addEventListener('touchend', function(e) { e.preventDefault(); printKitchen(window._lastOrder); });
+document.getElementById('bigPrintCustomer').addEventListener('click', function() { printCustomer(window._lastOrder); });
+document.getElementById('bigPrintCustomer').addEventListener('touchend', function(e) { e.preventDefault(); printCustomer(window._lastOrder); });
 
-function printReceipt(order) {
+// 打印：顾客小票（价格、合计）
+function printCustomer(order) {
   if (!order) return;
   var w = window.open('', '_blank', 'width=300,height=500');
   var now = new Date().toLocaleString('zh-CN');
   var itemsHtml = order.items.map(function(i) {
-    return '<tr><td>' + i.name + (i.note ? '<br><small style="color:#999">' + i.note + '</small>' : '') + '</td><td style="text-align:right">¥' + Number(i.price).toFixed(2) + '</td></tr>';
+    return '<tr><td>' + i.name + '</td><td style="text-align:right">¥' + Number(i.price).toFixed(2) + '</td></tr>';
   }).join('');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>焰厨小票</title><style>body{font-family:monospace;font-size:13px;width:260px;margin:0 auto;padding:10px;color:#000} h2{text-align:center;margin:6px 0} .line{border-top:1px dashed #000;margin:6px 0} table{width:100%} td{padding:3px 0;vertical-align:top} .total{font-size:16px;font-weight:bold;text-align:right} @media print{body{width:58mm}}</style></head><body>'+
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>顾客小票</title><style>body{font-family:monospace;font-size:13px;width:260px;margin:0 auto;padding:10px;color:#000} h2{text-align:center;margin:6px 0} .line{border-top:1px dashed #000;margin:6px 0} table{width:100%} td{padding:3px 0} .total{font-size:18px;font-weight:bold;text-align:right} @media print{body{width:58mm}}</style></head><body>'+
     '<h2>🔥 焰厨</h2>'+
     '<div style="text-align:center;font-size:11px">' + now + '</div>'+
-    '<div style="text-align:center;font-size:11px">' + order.people + '人就餐 #' + (order.id||'') + '</div>'+
+    '<div style="text-align:center;font-size:11px">' + order.people + '人 #' + (order.id||'') + '</div>'+
     '<div class="line"></div>'+
     '<table>' + itemsHtml + '</table>'+
     '<div class="line"></div>'+
     '<div class="total">合计 ¥' + Number(order.total).toFixed(2) + '</div>'+
     '<div style="text-align:center;font-size:11px;margin-top:8px">谢谢惠顾</div>'+
+    '</body></html>');
+  w.document.close();
+  setTimeout(function() { w.print(); setTimeout(function() { w.close(); }, 1000); }, 500);
+}
+
+// 打印：后厨小票（大字菜名+备注，无价格）
+function printKitchen(order) {
+  if (!order) return;
+  var w = window.open('', '_blank', 'width=300,height=500');
+  var now = new Date().toLocaleString('zh-CN');
+  var itemsHtml = order.items.map(function(i, idx) {
+    var noteHtml = i.note ? '<div style="font-size:16px;color:#e8452d;margin-left:16px">→ ' + i.note + '</div>' : '';
+    return '<div style="font-size:20px;font-weight:bold;padding:6px 0;border-bottom:1px dotted #ccc">' + (idx+1) + '. ' + i.name + noteHtml + '</div>';
+  }).join('');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>后厨小票</title><style>body{font-family:monospace;width:260px;margin:0 auto;padding:10px;color:#000} h2{text-align:center;margin:6px 0;font-size:22px} .line{border-top:2px solid #000;margin:6px 0} @media print{body{width:58mm}}</style></head><body>'+
+    '<h2>🔥 焰厨 · 后厨</h2>'+
+    '<div style="text-align:center;font-size:14px">' + now + '</div>'+
+    '<div style="text-align:center;font-size:16px;font-weight:bold">' + order.people + '人 #' + (order.id||'') + '</div>'+
+    '<div class="line"></div>'+
+    itemsHtml +
+    '<div class="line"></div>'+
+    '<div style="text-align:center;font-size:11px">共' + order.items.length + '道菜</div>'+
     '</body></html>');
   w.document.close();
   setTimeout(function() { w.print(); setTimeout(function() { w.close(); }, 1000); }, 500);
@@ -462,7 +496,7 @@ function speakOrder(order) {
   h += '<div style="margin-top:16px;font-size:30px;color:#ff6b35;font-weight:800">' + Number(order.total).toFixed(2) + ' 元</div>';
   document.getElementById('bigOrderContent').innerHTML = h;
   bigPopup.style.display = 'flex';
-  setTimeout(function() { printReceipt(order); }, 600);
+  setTimeout(function() { printKitchen(order); }, 600);
   try {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
