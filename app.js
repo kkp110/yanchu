@@ -192,11 +192,10 @@ async function submitOrder(){
   cart = []; updateCart(); renderList(menu); closeCart();
 
   if (orderSaved) {
-    showCartToast('下单成功！商家已收到订单');
+    showCartToast('下单成功！商家正在准备');
+  } else {
+    showCartToast('下单失败，请重试');
   }
-  payAmount.textContent = '请支付 ' + formatPrice(total) + '（'+peopleCount+'人就餐）';
-  if (paymentQR) { payQR.src = paymentQR; payQR.style.display = 'block'; } else { payQR.style.display = 'none'; }
-  payModal.setAttribute('aria-hidden','false');
 }
 
 async function loadConfig(){

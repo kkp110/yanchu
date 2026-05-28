@@ -162,6 +162,72 @@ async function loadOrders() {
 
 $('#refreshOrders').addEventListener('click', loadOrders);
 
+// ===== 语音播报 =====
+let voiceEnabled = true;
+let lastOrderIds = new Set();
+
+function speakOrder(order) {
+  if (!voiceEnabled) return;
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const items = order.items.map(i => i.name + (i.note ? '，' + i.note : '')).join('。');
+    const text = `新订单！${order.people}人就餐。${items}。合计${Number(order.total).toFixed(2)}元。`;
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'zh-CN';
+    utter.rate = 0.9;
+    utter.pitch = 1;
+    window.speechSynthesis.speak(utter);
+  }
+}
+
+async function pollOrders() {
+  try {
+    const res = await fetch('/api/orders');
+    if (!res.ok) return;
+    const orders = await res.json();
+    if (orders.length) {
+      const newOrders = orders.filter(o => !lastOrderIds.has(o.id));
+      newOrders.forEach(o => {
+        lastOrderIds.add(o.id);
+        speakOrder(o);
+      });
+      // 只保留最近的200个订单ID
+      if (lastOrderIds.size > 200) {
+        const ids = [...lastOrderIds].slice(-100);
+        lastOrderIds = new Set(ids);
+      }
+      // 如果当前在订单标签页，自动刷新
+      if ($('#tab-orders').classList.contains('active')) {
+        loadOrders();
+      }
+    }
+  } catch(e) {}
+}
+
+// 初始化已知订单
+(async function initOrders() {
+  try {
+    const res = await fetch('/api/orders');
+    if (res.ok) {
+      const orders = await res.json();
+      orders.forEach(o => lastOrderIds.add(o.id));
+    }
+  } catch(e) {}
+  // 每5秒轮询新订单
+  setInterval(pollOrders, 5000);
+})();
+
+// 语音开关按钮
+const voiceBtn = document.createElement('button');
+voiceBtn.textContent = '🔊 语音播报：开';
+voiceBtn.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:200;padding:10px 18px;border-radius:20px;border:0;background:#e8452d;color:#fff;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.2)';
+voiceBtn.addEventListener('click', () => {
+  voiceEnabled = !voiceEnabled;
+  voiceBtn.textContent = voiceEnabled ? '🔊 语音播报：开' : '🔇 语音播报：关';
+  voiceBtn.style.background = voiceEnabled ? '#e8452d' : '#999';
+});
+document.body.appendChild(voiceBtn);
+
 function showToast(msg) {
   let t = $('.toast');
   if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); }

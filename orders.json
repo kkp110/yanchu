@@ -3,6 +3,29 @@
     "people": 2,
     "items": [
       {
+        "name": "水煮牛肉",
+        "price": 48
+      },
+      {
+        "name": "麻婆豆腐",
+        "price": 22
+      },
+      {
+        "name": "鱼香肉丝",
+        "price": 26
+      }
+    ],
+    "subtotal": 96,
+    "extraFee": 0,
+    "total": 96,
+    "id": "mpozbdsbex9b",
+    "time": "2026/5/28 12:14:34",
+    "status": "已下单"
+  },
+  {
+    "people": 2,
+    "items": [
+      {
         "name": "鱼香肉丝",
         "price": 26
       }
