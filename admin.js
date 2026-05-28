@@ -446,15 +446,15 @@ function printCustomer(order) {
   var itemsHtml = order.items.map(function(i) {
     return '<tr><td>' + i.name + '</td><td style="text-align:right">¥' + Number(i.price).toFixed(2) + '</td></tr>';
   }).join('');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>顾客小票</title><style>body{font-family:monospace;font-size:13px;width:260px;margin:0 auto;padding:10px;color:#000} h2{text-align:center;margin:6px 0} .line{border-top:1px dashed #000;margin:6px 0} table{width:100%} td{padding:3px 0} .total{font-size:18px;font-weight:bold;text-align:right} @media print{body{width:58mm}}</style></head><body>'+
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>顾客小票</title><style>@page{size:58mm auto;margin:0}body{font-family:"Microsoft YaHei","PingFang SC",monospace;font-size:12px;width:58mm;margin:0 auto;padding:4mm;color:#000;word-break:break-all} h2{text-align:center;margin:2mm 0;font-size:16px} .line{border-top:1px dashed #000;margin:2mm 0} table{width:100%} td{padding:1mm 0;font-size:12px} .total{font-size:18px;font-weight:bold;text-align:right;margin-top:2mm} @media print{html,body{width:58mm;margin:0;padding:2mm}}</style></head><body>'+
     '<h2>🔥 焰厨</h2>'+
-    '<div style="text-align:center;font-size:11px">' + now + '</div>'+
-    '<div style="text-align:center;font-size:11px">' + order.people + '人 #' + (order.id||'') + '</div>'+
+    '<div style="text-align:center;font-size:10px">' + now + '</div>'+
+    '<div style="text-align:center;font-size:10px">' + order.people + '人 #' + (order.id||'') + '</div>'+
     '<div class="line"></div>'+
     '<table>' + itemsHtml + '</table>'+
     '<div class="line"></div>'+
     '<div class="total">合计 ¥' + Number(order.total).toFixed(2) + '</div>'+
-    '<div style="text-align:center;font-size:11px;margin-top:8px">谢谢惠顾</div>'+
+    '<div style="text-align:center;font-size:10px;margin-top:2mm">谢谢惠顾</div>'+
     '</body></html>');
   w.document.close();
   setTimeout(function() { w.print(); setTimeout(function() { w.close(); }, 1000); }, 500);
@@ -469,14 +469,14 @@ function printKitchen(order) {
     var noteHtml = i.note ? '<div style="font-size:16px;color:#e8452d;margin-left:16px">→ ' + i.note + '</div>' : '';
     return '<div style="font-size:20px;font-weight:bold;padding:6px 0;border-bottom:1px dotted #ccc">' + (idx+1) + '. ' + i.name + noteHtml + '</div>';
   }).join('');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>后厨小票</title><style>body{font-family:monospace;width:260px;margin:0 auto;padding:10px;color:#000} h2{text-align:center;margin:6px 0;font-size:22px} .line{border-top:2px solid #000;margin:6px 0} @media print{body{width:58mm}}</style></head><body>'+
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>后厨小票</title><style>@page{size:58mm auto;margin:0}body{font-family:"Microsoft YaHei","PingFang SC",monospace;width:58mm;margin:0 auto;padding:4mm;color:#000;word-break:break-all} h2{text-align:center;margin:2mm 0;font-size:18px} .line{border-top:2px solid #000;margin:3mm 0} @media print{html,body{width:58mm;margin:0;padding:2mm}}</style></head><body>'+
     '<h2>🔥 焰厨 · 后厨</h2>'+
-    '<div style="text-align:center;font-size:14px">' + now + '</div>'+
-    '<div style="text-align:center;font-size:16px;font-weight:bold">' + order.people + '人 #' + (order.id||'') + '</div>'+
+    '<div style="text-align:center;font-size:12px">' + now + '</div>'+
+    '<div style="text-align:center;font-size:14px;font-weight:bold">' + order.people + '人 #' + (order.id||'') + '</div>'+
     '<div class="line"></div>'+
     itemsHtml +
     '<div class="line"></div>'+
-    '<div style="text-align:center;font-size:11px">共' + order.items.length + '道菜</div>'+
+    '<div style="text-align:center;font-size:10px">共' + order.items.length + '道菜</div>'+
     '</body></html>');
   w.document.close();
   setTimeout(function() { w.print(); setTimeout(function() { w.close(); }, 1000); }, 500);
