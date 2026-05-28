@@ -326,8 +326,9 @@ function notifyOrder(order) {
   }
 }
 
-// 循环警报音（即使语音播完也会持续响）
+// 警报音（响3秒自动停）
 let alarmInterval = null;
+let alarmTimeout = null;
 function startAlarm() {
   stopAlarm();
   alarmInterval = setInterval(() => {
@@ -344,9 +345,12 @@ function startAlarm() {
       osc.stop(ctx.currentTime + 0.25);
     } catch(e) {}
   }, 800);
+  // 3秒后自动停止
+  alarmTimeout = setTimeout(stopAlarm, 3000);
 }
 function stopAlarm() {
   if (alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; }
+  if (alarmTimeout) { clearTimeout(alarmTimeout); alarmTimeout = null; }
 }
 
 // 提示音（手机也能听到）
