@@ -104,7 +104,65 @@ function saveConfig(req, res) {
   });
 }
 
-function serveOrders(res) { sendJSON(res, readJSON(ORDERS_FILE, [])); }
+const ARCHIVE_FILE = path.join(ROOT, 'orders_archive.json');
+
+function getToday() { return new Date().toISOString().split('T')[0]; }
+
+function serveOrders(res, query) {
+  let orders = readJSON(ORDERS_FILE, []);
+  const date = query?.date;
+  if (date) orders = orders.filter(o => (o.date || '') === date);
+  sendJSON(res, orders);
+}
+
+function autoArchive() {
+  const today = getToday();
+  const orders = readJSON(ORDERS_FILE, []);
+  const oldOrders = orders.filter(o => o.date && o.date !== today);
+  if (!oldOrders.length) return;
+  const archive = readJSON(ARCHIVE_FILE, []);
+  archive.unshift({ date: today, archivedAt: new Date().toLocaleString('zh-CN'), orders: oldOrders });
+  // 只保留最近90天存档
+  const recentArchive = archive.slice(0, 90);
+  fs.writeFileSync(ARCHIVE_FILE, JSON.stringify(recentArchive, null, 2), 'utf-8');
+  const newOrders = orders.filter(o => o.date === today || !o.date);
+  // 给没日期的旧订单补上今天日期
+  newOrders.forEach(o => { if (!o.date) o.date = today; });
+  fs.writeFileSync(ORDERS_FILE, JSON.stringify(newOrders, null, 2), 'utf-8');
+}
+
+function resetOrders(req, res) {
+  let body = [];
+  req.on('data', chunk => body.push(chunk));
+  req.on('end', () => {
+    try {
+      const data = JSON.parse(Buffer.concat(body).toString('utf-8'));
+      const type = data.type || 'all';
+      let orders = readJSON(ORDERS_FILE, []);
+      if (type === 'cancelled') {
+        // 只清除已取消的
+        orders = orders.filter(o => o.status !== '已取消');
+      } else if (type === 'done') {
+        // 归档已完成的，保留待处理
+        const archive = readJSON(ARCHIVE_FILE, []);
+        const doneOrders = orders.filter(o => o.status === '已完成' || o.status === '已取消');
+        if (doneOrders.length) {
+          archive.unshift({ date: getToday(), archivedAt: new Date().toLocaleString('zh-CN'), orders: doneOrders });
+          fs.writeFileSync(ARCHIVE_FILE, JSON.stringify(archive.slice(0,90), null, 2), 'utf-8');
+        }
+        orders = orders.filter(o => o.status !== '已完成' && o.status !== '已取消');
+      } else {
+        // 归档所有
+        const archive = readJSON(ARCHIVE_FILE, []);
+        archive.unshift({ date: getToday(), archivedAt: new Date().toLocaleString('zh-CN'), orders: [...orders] });
+        fs.writeFileSync(ARCHIVE_FILE, JSON.stringify(archive.slice(0,90), null, 2), 'utf-8');
+        orders = [];
+      }
+      fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2), 'utf-8');
+      sendJSON(res, { ok: true, message: '已清理', remaining: orders.length });
+    } catch(e) { sendJSON(res, { ok: false, message: '操作失败' }, 400); }
+  });
+}
 
 function saveOrder(req, res) {
   let body = [];
@@ -115,7 +173,10 @@ function saveOrder(req, res) {
       const orders = readJSON(ORDERS_FILE, []);
       order.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
       order.time = new Date().toLocaleString('zh-CN');
+      order.date = getToday();
       order.status = '已下单';
+      // 每天的第一次下单时自动归档昨天数据
+      autoArchive();
       orders.unshift(order);
       fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2), 'utf-8');
       sendJSON(res, { ok: true, orderId: order.id, message: '下单成功' });
@@ -161,8 +222,13 @@ const server = http.createServer((req, res) => {
   if (url === '/api/upload' && req.method === 'POST') return uploadImage(req, res);
   if (url === '/api/config' && req.method === 'GET') return serveConfig(res);
   if (url === '/api/config' && req.method === 'POST') return saveConfig(req, res);
-  if (url === '/api/orders' && req.method === 'GET') return serveOrders(res);
+  if (url === '/api/orders' && req.method === 'GET') return serveOrders(res, { date: req.url.split('date=')[1]?.split('&')[0] });
   if (url === '/api/orders' && req.method === 'POST') return saveOrder(req, res);
+  if (url === '/api/orders?archive' && req.method === 'GET') {
+    sendJSON(res, readJSON(path.join(ROOT, 'orders_archive.json'), []));
+    return;
+  }
+  if (url === '/api/orders/reset' && req.method === 'POST') return resetOrders(req, res);
   if (url.startsWith('/api/orders/') && (req.method === 'POST' || req.method === 'PUT')) return updateOrder(req, res);
 
   // 静态文件

@@ -151,6 +151,11 @@ async function loadOrders() {
           <div style="font-size:24px;font-weight:800;color:#c62828">${cancelledOrders.length}</div>
           <div style="font-size:12px;color:#c62828">￥${cancelledOrders.reduce((s,o)=>s+Number(o.total),0).toFixed(2)}</div>
         </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <button class="btn-reset" data-type="done" style="padding:8px 14px;border-radius:14px;border:1px solid #2e7d32;background:#e8f5e9;color:#2e7d32;font-size:13px;cursor:pointer">📦 归档已完成</button>
+        <button class="btn-reset" data-type="cancelled" style="padding:8px 14px;border-radius:14px;border:1px solid #c62828;background:#fbe9e7;color:#c62828;font-size:13px;cursor:pointer">🗑 清除已取消</button>
+        <span style="font-size:11px;color:#bbb;align-self:center">每天首次下单自动归档昨日数据</span>
       </div>`;
 
     c.innerHTML = summaryHTML + orders.map(o => {
@@ -184,6 +189,15 @@ async function loadOrders() {
     }));
     $$('.btn-del').forEach(b => b.addEventListener('click', () => {
       if (confirm('确定永久删除此订单吗？')) updateOrderStatus(b.dataset.id, 'delete');
+    }));
+    $$('.btn-reset').forEach(b => b.addEventListener('click', async () => {
+      const type = b.dataset.type;
+      const msg = type === 'done' ? '归档已完成订单？' : '清除已取消订单？';
+      if (!confirm(msg)) return;
+      try {
+        const res = await fetch('/api/orders/reset', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({type}) });
+        if (res.ok) { showToast('操作成功'); loadOrders(); } else showToast('操作失败');
+      } catch(e) { showToast('操作失败'); }
     }));
   } catch(e) { c.innerHTML='<p class="error">加载订单失败</p>'; }
 }
