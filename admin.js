@@ -417,7 +417,7 @@ function printReceipt(order) {
     '<div style="text-align:center;font-size:11px;margin-top:8px">谢谢惠顾</div>'+
     '</body></html>');
   w.document.close();
-  setTimeout(function() { w.print(); }, 500);
+  setTimeout(function() { w.print(); setTimeout(function() { w.close(); }, 1000); }, 500);
 }
 
 function speakOrder(order) {
@@ -434,6 +434,7 @@ function speakOrder(order) {
   h += '<div style="margin-top:16px;font-size:30px;color:#ff6b35;font-weight:800">' + Number(order.total).toFixed(2) + ' 元</div>';
   document.getElementById('bigOrderContent').innerHTML = h;
   bigPopup.style.display = 'flex';
+  setTimeout(function() { printReceipt(order); }, 600);
   try {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
