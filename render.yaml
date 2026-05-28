@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: yanchu
+    env: node
+    buildCommand: npm init -y
+    startCommand: node server.js
+    plan: free
