@@ -527,4 +527,16 @@ function showToast(msg) {
   clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('show'),2000);
 }
 
+// 图片预览
+$('#imageInput')?.addEventListener('change', function() {
+  const file = this.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    $('#imgPreview').src = e.target.result;
+    $('#imgPreview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+});
+
 loadMenu();
