@@ -60,16 +60,29 @@ function renderFeatured(list){
       if (dish) { addToCart(dish); showCartToast(dish.name + ' 已加入'); }
     });
   });
-  // 自动滚动
-  let scrollPos = 0;
-  const scrollWidth = container.scrollWidth - container.clientWidth;
-  if (scrollWidth > 0) {
-    setInterval(() => {
-      scrollPos += 1;
-      if (scrollPos >= scrollWidth) scrollPos = 0;
-      container.scrollLeft = scrollPos;
-    }, 50);
+  // 自动滚动（手动滑动时暂停）
+  let scrollPaused = false;
+  let scrollTimer = null;
+
+  function startAutoScroll() {
+    if (scrollTimer) return;
+    const maxScroll = container.scrollWidth - container.clientWidth;
+    if (maxScroll <= 0) return;
+    let dir = 1;
+    scrollTimer = setInterval(() => {
+      if (scrollPaused) return;
+      if (container.scrollLeft >= maxScroll - 2) dir = -1;
+      if (container.scrollLeft <= 2) dir = 1;
+      container.scrollLeft += dir;
+    }, 40);
   }
+
+  container.addEventListener('touchstart', () => { scrollPaused = true; });
+  container.addEventListener('touchend', () => { setTimeout(() => { scrollPaused = false; }, 2000); });
+  container.addEventListener('mouseenter', () => { scrollPaused = true; });
+  container.addEventListener('mouseleave', () => { setTimeout(() => { scrollPaused = false; }, 1500); });
+
+  startAutoScroll();
 }
 
 function renderList(list){
