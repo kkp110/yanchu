@@ -113,32 +113,16 @@ async function saveMenu() {
 $('#itemForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   const form = e.target;
-
-$('#itemForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const form = e.target;
   const name = form.name.value.trim();
   const price = parseFloat(form.price.value);
   if (!name) return showToast('请输入菜名');
   if (isNaN(price) || price < 1) return showToast('价格最低 1 元');
 
-  const imgFile = document.getElementById("imageInput")?.files?.[0];
-  let imgPath = form.dataset.editIdx ? (menu[parseInt(form.dataset.editIdx)]?.img || 'images/default.svg') : 'images/default.svg';
-  if (imgFile && imgFile.size > 0) {
-    if (imgFile.size > 20*1024*1024) { showToast('图片最大 20MB'); return; }
-    showToast('图片上传中...');
-    try {
-      const uRes = await fetch('/api/upload', { method: 'POST', body: imgFile });
-      const r = await uRes.json();
-      if (r.ok) { imgPath = r.path; showToast('图片已上传'); }
-      else throw new Error(r.message || '服务器错误');
-    } catch(e) {
-      if (imgFile.size < 300000) {
-        imgPath = await new Promise(r => { const reader = new FileReader(); reader.onload = () => r(reader.result); reader.readAsDataURL(imgFile); });
-      } else { showToast('上传失败'); return; }
-    }
+  const imgFile = document.getElementById('imageInput')?.files?.[0];
+  let imgPath = 'images/default.svg';
+  if (imgFile) {
+    imgPath = await new Promise(r => { const reader = new FileReader(); reader.onload = () => r(reader.result); reader.readAsDataURL(imgFile); });
   }
-
   const dish = {
     id: form.dataset.editIdx ? menu[parseInt(form.dataset.editIdx)].id : (menu.length ? Math.max(...menu.map(d=>d.id))+1 : 1),
     name, price, category: form.category.value.trim(), desc: form.desc.value.trim(),
@@ -149,14 +133,6 @@ $('#itemForm').addEventListener('submit', async function(e) {
     delete form.dataset.editIdx;
     form.querySelector('button').textContent = '保存菜品';
   } else { menu.push(dish); }
-  await saveMenu(); form.reset(); document.getElementById("imageInput").value = '';
-  $('#imgPreview').style.display = 'none';
-  form.querySelector('.mgmt-submit').textContent = '💾 保存菜品';
-  $('#formTitle').textContent = '➕ 添加菜品';
-  $('#cancelEditBtn').style.display = 'none';
-  delete form.dataset.editIdx;
-});
-
   await saveMenu(); form.reset(); $('#imageInput').value = '';
   form.querySelector('.mgmt-submit').textContent = '💾 保存菜品';
   $('#formTitle').textContent = '➕ 添加菜品';
@@ -350,9 +326,8 @@ function notifyOrder(order) {
   }
 }
 
-// 警报音（响3秒自动停）
+// 循环警报音（即使语音播完也会持续响）
 let alarmInterval = null;
-let alarmTimeout = null;
 function startAlarm() {
   stopAlarm();
   alarmInterval = setInterval(() => {
@@ -369,12 +344,9 @@ function startAlarm() {
       osc.stop(ctx.currentTime + 0.25);
     } catch(e) {}
   }, 800);
-  // 3秒后自动停止
-  alarmTimeout = setTimeout(stopAlarm, 3000);
 }
 function stopAlarm() {
   if (alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; }
-  if (alarmTimeout) { clearTimeout(alarmTimeout); alarmTimeout = null; }
 }
 
 // 提示音（手机也能听到）
@@ -393,9 +365,6 @@ function playBeep() {
   } catch(e) {}
 }
 
-// 待播报订单队列（解决移动端语音需用户手势的问题）
-let pendingOrder = null;
-
 function speakOrder(order) {
   if (!voiceEnabled) return;
   notifyOrder(order);
@@ -403,48 +372,62 @@ function speakOrder(order) {
   playBeep();
   if (!('speechSynthesis' in window)) return;
 
-  // 存起来，等用户点击页面时触发播报
-  pendingOrder = order;
-  // 弹提示引导用户点一下屏幕
-  showToast('📢 新订单！点击屏幕任意处听播报');
+  // 详细播报续行 — 确保 voices 已加载
+  const doSpeak = () => {
+    window.speechSynthesis.cancel();
+    const voices = window.speechSynthesis.getVoices();
+    // 找中文语音
+    const zhVoice = voices.find(v => v.lang === 'zh-CN' && v.name.includes('TingTing')) ||
+                    voices.find(v => v.lang === 'zh-CN' && v.name.includes('Xiaoxiao')) ||
+                    voices.find(v => v.lang === 'zh-CN' && v.name.includes('Yaoyao')) ||
+                    voices.find(v => v.lang === 'zh-CN') ||
+                    voices.find(v => v.lang.startsWith('zh-')) ||
+                    voices.find(v => v.lang === 'zh-HK') ||
+                    voices.find(v => v.lang === 'zh-TW');
+
+    // 逐条播报（避免长文本被截断）
+    const lines = [];
+    lines.push(`叮咚！来新订单了！${order.people}位顾客。`);
+    order.items.forEach((i, idx) => {
+      let t = `第${idx+1}道，${i.name}`;
+      if (i.note) t += `，备注，${i.note}`;
+      lines.push(t);
+    });
+    lines.push(`以上共${order.items.length}道菜，合计${Number(order.total).toFixed(2)}元。`);
+
+    let idx = 0;
+    function speakNext() {
+      if (idx >= lines.length) { stopAlarm(); return; }
+      const utter = new SpeechSynthesisUtterance(lines[idx]);
+      utter.lang = 'zh-CN';
+      utter.rate = 0.85;
+      utter.pitch = 1.1;
+      utter.volume = 1;
+      if (zhVoice) utter.voice = zhVoice;
+      utter.onend = () => { idx++; setTimeout(speakNext, 100); };
+      utter.onerror = () => { idx++; setTimeout(speakNext, 100); };
+      window.speechSynthesis.speak(utter);
+    }
+    speakNext();
+  };
+
+  // 等待 voices 加载（手机浏览器可能异步）
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length > 0) {
+    setTimeout(doSpeak, 200);
+  } else {
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.onvoiceschanged = null;
+      setTimeout(doSpeak, 200);
+    };
+  }
 }
 
-// 页面点击触发播报（满足移动端用户手势要求）
-document.addEventListener('click', function triggerSpeech() {
-  if (!pendingOrder) return;
-  const order = pendingOrder;
-  pendingOrder = null;
-
-  // 加载语音列表
-  const voices = window.speechSynthesis.getVoices();
-  const zhVoice = voices.find(v => v.lang === 'zh-CN' && v.name.includes('TingTing')) ||
-                  voices.find(v => v.lang === 'zh-CN' && v.name.includes('Xiaoxiao')) ||
-                  voices.find(v => v.lang === 'zh-CN') ||
-                  voices.find(v => v.lang.startsWith('zh-'));
-  window.speechSynthesis.cancel();
-
-  // 构建完整播报文本（一次性读完）
-  let parts = [`叮咚！来新订单了！${order.people}位顾客。`];
-  order.items.forEach((i, idx) => {
-    let t = `第${idx+1}道，${i.name}`;
-    if (i.note) t += `，备注，${i.note}`;
-    parts.push(t + '。');
-  });
-  parts.push(`以上共${order.items.length}道菜，合计${Number(order.total).toFixed(2)}元。`);
-  const fullText = parts.join('');
-
-  const utter = new SpeechSynthesisUtterance(fullText);
-  utter.lang = 'zh-CN';
-  utter.rate = 0.85;
-  utter.volume = 1;
-  if (zhVoice) utter.voice = zhVoice;
-  utter.onend = () => stopAlarm();
-  utter.onerror = () => stopAlarm();
-
-  // 稍延迟确保在用户手势上下文中
-  setTimeout(() => window.speechSynthesis.speak(utter), 100);
-});
-
+// 预加载中文语音
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+  document.addEventListener('click', function initSpeech() {
     const u = new SpeechSynthesisUtterance('');
     u.volume = 0; window.speechSynthesis.speak(u);
   }, { once: true });
@@ -539,17 +522,5 @@ function showToast(msg) {
   t.textContent = msg; t.classList.add('show');
   clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('show'),2000);
 }
-
-// 图片预览
-$('#imageInput')?.addEventListener('change', function() {
-  const file = this.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    $('#imgPreview').src = e.target.result;
-    $('#imgPreview').style.display = 'block';
-  };
-  reader.readAsDataURL(file);
-});
 
 loadMenu();
