@@ -6,7 +6,8 @@
     "desc": "江湖风味版，花生脆、微辣收汁。",
     "img": "images/default.svg",
     "availableToday": true,
-    "category": "热菜"
+    "category": "热菜",
+    "recommended": true
   },
   {
     "id": 2,
@@ -15,7 +16,8 @@
     "desc": "鲜香麻辣，牛肉滑嫩，配大量辣油和花椒。",
     "img": "images/shuizhu.svg",
     "availableToday": true,
-    "category": "热菜"
+    "category": "热菜",
+    "recommended": true
   },
   {
     "id": 3,
@@ -78,7 +80,8 @@
     "desc": "1",
     "img": "images/default.svg",
     "availableToday": true,
-    "category": "热菜"
+    "category": "热菜",
+    "recommended": true
   },
   {
     "id": 10,
@@ -87,6 +90,7 @@
     "category": "1",
     "desc": "1",
     "availableToday": true,
-    "img": "images/default.svg"
+    "img": "images/default.svg",
+    "recommended": true
   }
 ]

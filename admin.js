@@ -302,10 +302,52 @@ async function updateOrderStatus(orderId, action) {
   } catch(e) { showToast('操作失败'); }
 }
 
-// ===== 语音播报（手机+电脑通用） =====
+// ===== 语音播报 + 后台通知 =====
 let voiceEnabled = true;
 let lastOrderIds = new Set();
 let wakeLock = null;
+
+// 请求通知权限（后台也能收到提醒）
+if ('Notification' in window && Notification.permission === 'default') {
+  Notification.requestPermission();
+}
+
+// 发送系统通知（后台也能弹出）
+function notifyOrder(order) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    const items = order.items.map(i => i.name + (i.note ? '('+i.note+')' : '')).join('、');
+    new Notification('🔥 焰厨 · 新订单！', {
+      body: `${order.people}人 · ${items} · 合计￥${Number(order.total).toFixed(2)}`,
+      icon: 'images/logo.svg',
+      tag: 'new-order',
+      requireInteraction: true,
+      vibrate: [200, 100, 200, 100, 200]
+    });
+  }
+}
+
+// 循环警报音（即使语音播完也会持续响）
+let alarmInterval = null;
+function startAlarm() {
+  stopAlarm();
+  alarmInterval = setInterval(() => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      osc.type = 'square';
+      gain.gain.value = 0.25;
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+      osc.stop(ctx.currentTime + 0.25);
+    } catch(e) {}
+  }, 800);
+}
+function stopAlarm() {
+  if (alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; }
+}
 
 // 提示音（手机也能听到）
 function playBeep() {
@@ -338,6 +380,11 @@ function getChineseVoice() {
 
 function speakOrder(order) {
   if (!voiceEnabled) return;
+  // 系统通知（后台也能弹出）
+  notifyOrder(order);
+  // 持续警报
+  startAlarm();
+  // 语音播报
   playBeep();
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
@@ -355,6 +402,7 @@ function speakOrder(order) {
     utter.volume = 1;
     const voice = getChineseVoice();
     if (voice) utter.voice = voice;
+    utter.onend = () => stopAlarm();
     window.speechSynthesis.speak(utter);
   }, 300);
 }
@@ -418,8 +466,33 @@ voiceBtn.addEventListener('click', () => {
   voiceEnabled = !voiceEnabled;
   voiceBtn.textContent = voiceEnabled ? '🔊 播报：开' : '🔇 播报：关';
   voiceBtn.style.background = voiceEnabled ? '#e8452d' : '#999';
-  if (voiceEnabled) { requestWakeLock(); showToast('语音播报已开启，请保持页面在前台'); }
+  if (voiceEnabled) {
+    requestWakeLock();
+    showToast('语音播报已开启 · 保持页面打开即可');
+  } else {
+    stopAlarm();
+    showToast('语音播报已关闭');
+  }
 });
+
+// 停止警报按钮（新订单时显示）
+const stopBtn = document.createElement('button');
+stopBtn.textContent = '🔕 停止警报';
+stopBtn.style.cssText = 'position:fixed;bottom:70px;right:20px;z-index:200;padding:10px 18px;border-radius:20px;border:0;background:#333;color:#fff;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.2);display:none';
+stopBtn.addEventListener('click', () => { stopAlarm(); stopBtn.style.display = 'none'; });
+document.body.appendChild(stopBtn);
+
+// 重写 startAlarm 以显示停止按钮
+const origStartAlarm = startAlarm;
+startAlarm = function() {
+  origStartAlarm();
+  stopBtn.style.display = 'block';
+};
+const origStopAlarm = stopAlarm;
+stopAlarm = function() {
+  origStopAlarm();
+  stopBtn.style.display = 'none';
+};
 document.body.appendChild(voiceBtn);
 
 // 手机提示
