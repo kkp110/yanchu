@@ -1,8 +1,12 @@
 let menu = [];
+let githubToken = localStorage.getItem('yanchu_token') || '';
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 
-// ========== Tab 切换 ==========
+const RAW = 'https://raw.githubusercontent.com/kkp110/yanchu/main';
+const GITHUB_API = 'https://api.github.com/repos/kkp110/yanchu/contents';
+
+// Tab 切换
 $$('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     $$('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -14,213 +18,153 @@ $$('.tab-btn').forEach(btn => {
   });
 });
 
-// ========== 菜单管理 ==========
-async function loadMenu() {
-  try {
-    const res = await fetch('/api/menu');
-    if (!res.ok) throw new Error('加载失败');
-    menu = await res.json();
-    renderList();
-  } catch (e) {
-    menu = [];
-    renderList();
-    console.error(e);
+// ===== GitHub API 读写 =====
+async function readFile(path) {
+  const r = await fetch(`${RAW}/${path}?${Date.now()}`);
+  if (!r.ok) throw new Error('读取失败');
+  return await r.json();
+}
+
+async function writeFile(path, data) {
+  if (!githubToken) { showToast('请先设置 GitHub Token'); return false; }
+  // 先获取当前文件的 SHA
+  const getRes = await fetch(`${GITHUB_API}/${path}`, {
+    headers: { 'Authorization': 'Bearer ' + githubToken, 'Accept': 'application/vnd.github+json' }
+  });
+  if (!getRes.ok) { showToast('Token 无效或无权限'); return false; }
+  const info = await getRes.json();
+  const sha = info.sha;
+
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+  const putRes = await fetch(`${GITHUB_API}/${path}`, {
+    method: 'PUT',
+    headers: { 'Authorization': 'Bearer ' + githubToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github+json' },
+    body: JSON.stringify({ message: '更新 ' + path, content: content, sha: sha })
+  });
+  if (!putRes.ok) { showToast('保存失败'); return false; }
+  return true;
+}
+
+// ===== Token 管理 =====
+function checkToken() {
+  if (!githubToken || githubToken.length < 10) {
+    githubToken = prompt('请输入 GitHub Personal Access Token（仅保存在本浏览器）:\n\n获取方式: github.com → Settings → Developer settings → Personal access tokens → Generate new token (classic) → 勾选 repo 权限', githubToken || '');
+    if (githubToken) { localStorage.setItem('yanchu_token', githubToken); showToast('Token 已保存'); }
   }
 }
 
+// ===== 菜单管理 =====
+async function loadMenu() {
+  try { menu = await readFile('menu.json'); renderList(); } catch(e) { menu = []; renderList(); }
+}
+
 function renderList() {
-  const container = $('#itemList');
-  if (!menu.length) {
-    container.innerHTML = '<p style="color:var(--muted)">暂无菜品，请添加。</p>';
-    return;
-  }
-  container.innerHTML = menu.map((item, i) => `
+  const c = $('#itemList');
+  if (!menu.length) { c.innerHTML = '<p style="color:var(--muted)">暂无菜品，请添加。</p>'; return; }
+  c.innerHTML = menu.map((item, i) => `
     <div class="dish-item">
       <img src="${item.img}" alt="${item.name}" onerror="this.src='images/default.svg'" />
       <div class="dish-info">
         <strong>${item.name}</strong>
-        <span>¥${Number(item.price).toFixed(2)} · ${item.category || '未分类'} · ${item.availableToday ? '有货' : '售罄'}</span>
+        <span>¥${Number(item.price).toFixed(2)} · ${item.category||'未分类'} · ${item.availableToday?'有货':'售罄'}</span>
       </div>
       <div class="dish-actions">
         <button class="btn-edit" data-idx="${i}">编辑</button>
         <button class="btn-del" data-idx="${i}">删除</button>
       </div>
-    </div>
-  `).join('');
-
-  $$('.btn-edit').forEach(btn => {
-    btn.addEventListener('click', () => editItem(parseInt(btn.dataset.idx)));
-  });
-  $$('.btn-del').forEach(btn => {
-    btn.addEventListener('click', () => deleteItem(parseInt(btn.dataset.idx)));
-  });
+    </div>`).join('');
+  $$('.btn-edit').forEach(b => b.addEventListener('click', () => editItem(parseInt(b.dataset.idx))));
+  $$('.btn-del').forEach(b => b.addEventListener('click', () => deleteItem(parseInt(b.dataset.idx))));
 }
 
 function editItem(idx) {
-  const item = menu[idx];
-  const form = $('#itemForm');
-  form.name.value = item.name;
-  form.price.value = item.price;
-  form.category.value = item.category || '';
-  form.desc.value = item.desc || '';
+  const item = menu[idx], form = $('#itemForm');
+  form.name.value = item.name; form.price.value = item.price;
+  form.category.value = item.category || ''; form.desc.value = item.desc || '';
   form.availableToday.value = item.availableToday ? 'true' : 'false';
   form.dataset.editIdx = idx;
   form.querySelector('button').textContent = '更新菜品';
   document.querySelector('.tab-btn[data-tab="tab-menu"]').click();
-  window.scrollTo({ top: form.offsetTop - 20, behavior: 'smooth' });
 }
 
 function deleteItem(idx) {
   if (!confirm(`确定删除"${menu[idx].name}"吗？`)) return;
-  menu.splice(idx, 1);
-  saveMenu();
+  menu.splice(idx, 1); saveMenu();
 }
 
 async function saveMenu() {
-  try {
-    const res = await fetch('/api/menu', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(menu)
-    });
-    if (!res.ok) throw new Error('保存失败');
-    renderList();
-    showToast('菜单已保存');
-  } catch (e) {
-    showToast('保存失败: ' + e.message);
-  }
+  checkToken();
+  const ok = await writeFile('menu.json', menu);
+  if (ok) { renderList(); showToast('菜单已保存（约5秒后生效）'); }
 }
 
 $('#itemForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
+  e.preventDefault(); checkToken();
   const form = e.target;
   const name = form.name.value.trim();
   const price = parseFloat(form.price.value);
-  const category = form.category.value.trim();
-  const desc = form.desc.value.trim();
-  const availableToday = form.availableToday.value === 'true';
-
   if (!name) return showToast('请输入菜名');
   if (isNaN(price) || price < 0) return showToast('请输入有效价格');
 
-  const imageFile = $('#imageInput').files[0];
+  const imgFile = $('#imageInput').files[0];
   let imgPath = 'images/default.svg';
-
-  if (imageFile) {
-    imgPath = await new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.readAsDataURL(imageFile);
-    });
+  if (imgFile) {
+    imgPath = await new Promise(r => { const reader = new FileReader(); reader.onload = () => r(reader.result); reader.readAsDataURL(imgFile); });
   }
-
-  const editIdx = form.dataset.editIdx;
-  if (editIdx !== undefined && editIdx !== '') {
-    const idx = parseInt(editIdx);
-    menu[idx] = { ...menu[idx], name, price, category, desc, availableToday, img: imgPath || menu[idx].img };
+  const dish = {
+    id: form.dataset.editIdx ? menu[parseInt(form.dataset.editIdx)].id : (menu.length ? Math.max(...menu.map(d=>d.id))+1 : 1),
+    name, price, category: form.category.value.trim(), desc: form.desc.value.trim(),
+    availableToday: form.availableToday.value === 'true', img: imgPath
+  };
+  if (form.dataset.editIdx !== undefined && form.dataset.editIdx !== '') {
+    menu[parseInt(form.dataset.editIdx)] = dish;
     delete form.dataset.editIdx;
     form.querySelector('button').textContent = '保存菜品';
-  } else {
-    const id = menu.length ? Math.max(...menu.map(d => d.id)) + 1 : 1;
-    menu.push({ id, name, price, desc, img: imgPath, availableToday, category });
-  }
-
-  await saveMenu();
-  form.reset();
-  $('#imageInput').value = '';
+  } else { menu.push(dish); }
+  await saveMenu(); form.reset(); $('#imageInput').value = '';
 });
 
-// ========== 收款码管理 ==========
+// ===== 收款码 =====
 async function loadPaymentConfig() {
-  try {
-    const res = await fetch('/api/config');
-    if (res.ok) {
-      const cfg = await res.json();
-      if (cfg.paymentQR) {
-        $('#currentQR').src = cfg.paymentQR;
-        $('#currentQR').style.display = 'block';
-        $('#noQR').style.display = 'none';
-      } else {
-        $('#currentQR').style.display = 'none';
-        $('#noQR').style.display = 'block';
-      }
-    }
-  } catch(e) {}
+  try { const cfg = await readFile('config.json');
+    if (cfg.paymentQR) { $('#currentQR').src=cfg.paymentQR; $('#currentQR').style.display='block'; $('#noQR').style.display='none'; }
+  } catch(e){}
 }
 
 $('#savePaymentQR').addEventListener('click', async function() {
+  checkToken();
   const file = $('#paymentQRInput').files[0];
   if (!file) return showToast('请先选择收款码图片');
-
-  const qrData = await new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.readAsDataURL(file);
-  });
-
-  try {
-    const res = await fetch('/api/config', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ paymentQR: qrData })
-    });
-    if (res.ok) {
-      showToast('收款码已保存');
-      loadPaymentConfig();
-    } else {
-      showToast('保存失败');
-    }
-  } catch(e) {
-    showToast('保存失败: ' + e.message);
-  }
+  const qrData = await new Promise(r => { const reader = new FileReader(); reader.onload = () => r(reader.result); reader.readAsDataURL(file); });
+  const ok = await writeFile('config.json', { paymentQR: qrData });
+  if (ok) { showToast('收款码已保存'); loadPaymentConfig(); }
 });
 
-// ========== 订单管理 ==========
+// ===== 订单 =====
 async function loadOrders() {
-  const container = $('#orderListContainer');
-  try {
-    const res = await fetch('/api/orders');
-    if (!res.ok) throw new Error('加载失败');
-    const orders = await res.json();
-    if (!orders.length) {
-      container.innerHTML = '<p style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">暂无订单</p>';
-      return;
-    }
-    container.innerHTML = orders.map(o => `
+  const c = $('#orderListContainer');
+  try { const orders = await readFile('orders.json');
+    if (!orders.length) { c.innerHTML='<p style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">暂无订单</p>'; return; }
+    c.innerHTML = orders.map(o => `
       <div class="order-item">
         <div class="order-header">
           <span class="order-id">#${o.id}</span>
-          <span class="order-status ${o.status==='已完成'?'status-done':'status-new'}">${o.status||'已下单'}</span>
+          <span class="order-status status-new">${o.status||'已下单'}</span>
           <span class="order-total">￥${Number(o.total).toFixed(2)}</span>
         </div>
         <div class="order-meta">${o.people||'?'}人就餐 · ${o.time||''}</div>
-        <div class="order-dishes">
-          ${(o.items||[]).map(i=>`<div>· ${i.name} ×1  ￥${Number(i.price).toFixed(2)}</div>`).join('')}
-          ${o.extraFee > 0 ? `<div style="color:rgba(255,255,255,0.4)">· 餐位费 ￥${Number(o.extraFee).toFixed(2)}</div>` : ''}
-        </div>
-      </div>
-    `).join('');
-  } catch(e) {
-    container.innerHTML = '<p class="error">加载订单失败</p>';
-  }
+        <div class="order-dishes">${(o.items||[]).map(i=>`<div>· ${i.name} ￥${Number(i.price).toFixed(2)}</div>`).join('')}</div>
+      </div>`).join('');
+  } catch(e) { c.innerHTML='<p class="error">加载订单失败</p>'; }
 }
 
 $('#refreshOrders').addEventListener('click', loadOrders);
 
-// ========== Toast ==========
 function showToast(msg) {
-  let toast = $('.toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.className = 'toast';
-    document.body.appendChild(toast);
-  }
-  toast.textContent = msg;
-  toast.classList.add('show');
-  clearTimeout(toast._t);
-  toast._t = setTimeout(() => toast.classList.remove('show'), 2000);
+  let t = $('.toast');
+  if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); }
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('show'),2000);
 }
 
-// ========== 启动 ==========
-loadMenu();
-loadPaymentConfig();
+loadMenu(); loadPaymentConfig();
