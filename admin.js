@@ -118,11 +118,32 @@ $('#itemForm').addEventListener('submit', async function(e) {
   if (!name) return showToast('请输入菜名');
   if (isNaN(price) || price < 1) return showToast('价格最低 1 元');
 
-  const imgFile = $('#imageInput').files[0];
-  let imgPath = 'images/default.svg';
-  if (imgFile) {
-    imgPath = await new Promise(r => { const reader = new FileReader(); reader.onload = () => r(reader.result); reader.readAsDataURL(imgFile); });
+  // 处理图片：上传到服务器存为文件（不受JSON大小限制）
+  const imgInput = document.getElementById('imageInput');
+  const imgFile = imgInput?.files?.[0];
+  let imgPath = form.dataset.editIdx ? (menu[parseInt(form.dataset.editIdx)]?.img || 'images/default.svg') : 'images/default.svg';
+
+  if (imgFile && imgFile.size > 0) {
+    showToast('图片上传中...');
+    try {
+      const uRes = await fetch('/api/upload', { method: 'POST', body: imgFile });
+      const uData = await uRes.json();
+      if (uData.ok) { imgPath = uData.path; showToast('图片已上传'); }
+      else throw new Error(uData.message);
+    } catch(e) {
+      // 上传失败，小图用 base64 兜底
+      if (imgFile.size < 200000) {
+        imgPath = await new Promise(function(resolve) {
+          var r = new FileReader();
+          r.onload = function() { resolve(r.result); };
+          r.readAsDataURL(imgFile);
+        });
+      } else {
+        showToast('图片上传失败，请重试'); return;
+      }
+    }
   }
+
   const dish = {
     id: form.dataset.editIdx ? menu[parseInt(form.dataset.editIdx)].id : (menu.length ? Math.max(...menu.map(d=>d.id))+1 : 1),
     name, price, category: form.category.value.trim(), desc: form.desc.value.trim(),
@@ -131,9 +152,11 @@ $('#itemForm').addEventListener('submit', async function(e) {
   if (form.dataset.editIdx !== undefined && form.dataset.editIdx !== '') {
     menu[parseInt(form.dataset.editIdx)] = dish;
     delete form.dataset.editIdx;
-    form.querySelector('button').textContent = '保存菜品';
   } else { menu.push(dish); }
-  await saveMenu(); form.reset(); $('#imageInput').value = '';
+  await saveMenu();
+  form.reset();
+  if (imgInput) imgInput.value = '';
+  $('#imgPreview').style.display = 'none';
   form.querySelector('.mgmt-submit').textContent = '💾 保存菜品';
   $('#formTitle').textContent = '➕ 添加菜品';
   $('#cancelEditBtn').style.display = 'none';

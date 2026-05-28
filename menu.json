@@ -6,8 +6,7 @@
     "desc": "江湖风味版，花生脆、微辣收汁。",
     "img": "images/default.svg",
     "availableToday": true,
-    "category": "热菜",
-    "recommended": true
+    "category": "热菜"
   },
   {
     "id": 2,
@@ -16,8 +15,7 @@
     "desc": "鲜香麻辣，牛肉滑嫩，配大量辣油和花椒。",
     "img": "images/shuizhu.svg",
     "availableToday": true,
-    "category": "热菜",
-    "recommended": true
+    "category": "热菜"
   },
   {
     "id": 3,
@@ -62,7 +60,8 @@
     "desc": "香辣干锅，菜花入味，带小香肠与辣椒。",
     "img": "images/gaoguo.svg",
     "availableToday": true,
-    "category": "干锅"
+    "category": "干锅",
+    "recommended": false
   },
   {
     "id": 8,
@@ -71,6 +70,26 @@
     "desc": "汤酸鲜香，鱼片嫩滑，适合多人分享。",
     "img": "images/suancaiyu.svg",
     "availableToday": true,
-    "category": "主菜"
+    "category": "主菜",
+    "recommended": true
+  },
+  {
+    "id": 9,
+    "name": "11",
+    "price": 2,
+    "desc": "1",
+    "img": "images/default.svg",
+    "availableToday": true,
+    "category": "热菜"
+  },
+  {
+    "id": 10,
+    "name": "点单测试",
+    "price": 111,
+    "category": "1",
+    "desc": "1",
+    "availableToday": true,
+    "img": "images/default.svg",
+    "recommended": true
   }
 ]
