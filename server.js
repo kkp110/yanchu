@@ -73,11 +73,13 @@ function saveMenu(req, res) {
 
 function uploadImage(req, res) {
   let chunks = [];
-  req.on('data', chunk => chunks.push(chunk));
+  let totalLen = 0;
+  req.on('data', chunk => { totalLen += chunk.length; if (totalLen < 20*1024*1024) chunks.push(chunk); });
   req.on('end', () => {
+    if (totalLen > 20*1024*1024) return sendJSON(res, { ok: false, message: '图片最大 20MB' }, 400);
     const buf = Buffer.concat(chunks);
-    const id = Math.random().toString(36).slice(2, 10);
-    const filename = `${id}.png`;
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+    const filename = `${id}.jpg`;
     fs.writeFileSync(path.join(UPLOADS_DIR, filename), buf);
     sendJSON(res, { ok: true, path: `uploads/${filename}` });
   });
