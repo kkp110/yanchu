@@ -1,0 +1,76 @@
+[
+  {
+    "id": 1,
+    "name": "招牌宫保鸡丁",
+    "price": 28,
+    "desc": "江湖风味版，花生脆、微辣收汁。",
+    "img": "images/default.svg",
+    "availableToday": true,
+    "category": "热菜",
+    "recommended": true
+  },
+  {
+    "id": 2,
+    "name": "水煮牛肉",
+    "price": 48,
+    "desc": "鲜香麻辣，牛肉滑嫩，配大量辣油和花椒。",
+    "img": "images/shuizhu.svg",
+    "availableToday": true,
+    "category": "热菜",
+    "recommended": true
+  },
+  {
+    "id": 3,
+    "name": "回锅肉",
+    "price": 36,
+    "desc": "二次烹饪，肥而不腻，蒜苗点缀。",
+    "img": "images/huiguorou.svg",
+    "availableToday": true,
+    "category": "热菜"
+  },
+  {
+    "id": 4,
+    "name": "麻婆豆腐",
+    "price": 22,
+    "desc": "豆腐滑嫩，麻辣鲜香，带微碎牛肉末。",
+    "img": "images/mapo.svg",
+    "availableToday": true,
+    "category": "家常"
+  },
+  {
+    "id": 5,
+    "name": "鱼香肉丝",
+    "price": 26,
+    "desc": "酸甜咸辣层次分明，经典下饭菜。",
+    "img": "images/yuxiang.svg",
+    "availableToday": true,
+    "category": "热菜"
+  },
+  {
+    "id": 6,
+    "name": "口水鸡",
+    "price": 30,
+    "desc": "冷盘川味，麻辣鲜香，适合开胃。",
+    "img": "images/koushui.svg",
+    "availableToday": true,
+    "category": "冷盘"
+  },
+  {
+    "id": 7,
+    "name": "干锅菜花",
+    "price": 24,
+    "desc": "香辣干锅，菜花入味，带小香肠与辣椒。",
+    "img": "images/gaoguo.svg",
+    "availableToday": true,
+    "category": "干锅"
+  },
+  {
+    "id": 8,
+    "name": "酸菜鱼",
+    "price": 58,
+    "desc": "汤酸鲜香，鱼片嫩滑，适合多人分享。",
+    "img": "images/suancaiyu.svg",
+    "availableToday": true,
+    "category": "主菜"
+  }
+]

@@ -118,9 +118,9 @@ $('#itemForm').addEventListener('submit', async function(e) {
   if (!name) return showToast('请输入菜名');
   if (isNaN(price) || price < 1) return showToast('价格最低 1 元');
 
-  const imgFile = $('#imageInput').files[0];
+  const imgFile = document.getElementById("imageInput")?.files?.[0];
   let imgPath = 'images/default.svg';
-  if (imgFile) {
+  if (imgFile && imgFile.size < 800000) {
     imgPath = await new Promise(r => { const reader = new FileReader(); reader.onload = () => r(reader.result); reader.readAsDataURL(imgFile); });
   }
   const dish = {
