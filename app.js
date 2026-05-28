@@ -9,7 +9,6 @@ const grid = document.getElementById('menuGrid');
 const search = document.getElementById('search');
 const modal = document.getElementById('modal');
 const modalClose = document.getElementById('modalClose');
-const qrCanvas = document.getElementById('qrCode');
 
 const cartBtn = document.getElementById('cartBtn');
 const cartPanel = document.getElementById('cartPanel');
@@ -210,7 +209,6 @@ async function loadMenu(){
     if (!res.ok) throw new Error('无法加载菜单');
     menu = await res.json();
     renderList(menu);
-    initQRCode();
   } catch(e){ grid.innerHTML = '<div class="error">'+e.message+'</div>'; }
 }
 
@@ -230,11 +228,6 @@ search.addEventListener('input',e=>{
   if (!q) return renderList(menu);
   renderList(menu.filter(i=> i.name.toLowerCase().includes(q) || String(i.price).includes(q) || (i.category||'').toLowerCase().includes(q)));
 });
-
-function initQRCode(){
-  if (!window.QRCode) return;
-  QRCode.toCanvas(qrCanvas, window.location.href, { width:200, color:{dark:'#c82712',light:'#ffffff'} }, err=>err&&console.error(err));
-}
 
 loadConfig();
 loadMenu();
