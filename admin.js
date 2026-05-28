@@ -221,6 +221,7 @@ async function loadOrders() {
         <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
           ${isActive ? `<button class="btn-done" data-id="${o.id}">✓ 完成</button>` : ''}
           ${isActive ? `<button class="btn-cancel" data-id="${o.id}">✕ 取消</button>` : ''}
+          <button class="btn-print-order" data-id="${o.id}" style="padding:6px 12px;border-radius:14px;border:0;background:#e3f2fd;color:#1976d2;font-size:12px;cursor:pointer">🖨</button>
           ${(isCancelled || isDone) ? `<button class="btn-del" data-id="${o.id}">🗑 删除</button>` : ''}
         </div>
       </div>`;
@@ -391,13 +392,37 @@ function playBeep() {
 var bigPopup = document.createElement('div');
 bigPopup.id = 'bigOrderPopup';
 bigPopup.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.93);display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center';
-bigPopup.innerHTML = '<div id="bigOrderContent" style="color:#fff;font-size:22px;line-height:2;font-weight:700;max-height:70vh;overflow:auto"></div><button id="bigOrderClose" style="margin-top:20px;padding:14px 44px;border-radius:28px;border:0;background:#e8452d;color:#fff;font-size:20px;font-weight:800;cursor:pointer">我知道了</button>';
+bigPopup.innerHTML = '<div id="bigOrderContent" style="color:#fff;font-size:22px;line-height:2;font-weight:700;max-height:60vh;overflow:auto"></div><div style="display:flex;gap:12px;margin-top:16px"><button id="bigOrderPrint" style="padding:14px 36px;border-radius:28px;border:0;background:#fff;color:#e8452d;font-size:18px;font-weight:800;cursor:pointer">🖨 打印小票</button><button id="bigOrderClose" style="padding:14px 36px;border-radius:28px;border:0;background:#e8452d;color:#fff;font-size:18px;font-weight:800;cursor:pointer">我知道了</button></div>';
 document.body.appendChild(bigPopup);
 document.getElementById('bigOrderClose').addEventListener('click', function() { bigPopup.style.display = 'none'; stopAlarm(); });
 document.getElementById('bigOrderClose').addEventListener('touchend', function(e) { e.preventDefault(); bigPopup.style.display = 'none'; stopAlarm(); });
+document.getElementById('bigOrderPrint').addEventListener('click', function() { printReceipt(window._lastOrder); });
+document.getElementById('bigOrderPrint').addEventListener('touchend', function(e) { e.preventDefault(); printReceipt(window._lastOrder); });
+
+function printReceipt(order) {
+  if (!order) return;
+  var w = window.open('', '_blank', 'width=300,height=500');
+  var now = new Date().toLocaleString('zh-CN');
+  var itemsHtml = order.items.map(function(i) {
+    return '<tr><td>' + i.name + (i.note ? '<br><small style="color:#999">' + i.note + '</small>' : '') + '</td><td style="text-align:right">¥' + Number(i.price).toFixed(2) + '</td></tr>';
+  }).join('');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>焰厨小票</title><style>body{font-family:monospace;font-size:13px;width:260px;margin:0 auto;padding:10px;color:#000} h2{text-align:center;margin:6px 0} .line{border-top:1px dashed #000;margin:6px 0} table{width:100%} td{padding:3px 0;vertical-align:top} .total{font-size:16px;font-weight:bold;text-align:right} @media print{body{width:58mm}}</style></head><body>'+
+    '<h2>🔥 焰厨</h2>'+
+    '<div style="text-align:center;font-size:11px">' + now + '</div>'+
+    '<div style="text-align:center;font-size:11px">' + order.people + '人就餐 #' + (order.id||'') + '</div>'+
+    '<div class="line"></div>'+
+    '<table>' + itemsHtml + '</table>'+
+    '<div class="line"></div>'+
+    '<div class="total">合计 ¥' + Number(order.total).toFixed(2) + '</div>'+
+    '<div style="text-align:center;font-size:11px;margin-top:8px">谢谢惠顾</div>'+
+    '</body></html>');
+  w.document.close();
+  setTimeout(function() { w.print(); }, 500);
+}
 
 function speakOrder(order) {
   if (!voiceEnabled) return;
+  window._lastOrder = order;
   notifyOrder(order); startAlarm(); playBeep();
   var h = '<div style="font-size:34px;color:#ff6b35;margin-bottom:10px">🔥 新订单</div>';
   h += '<div style="font-size:18px;color:#aaa;margin-bottom:14px">' + order.people + '人</div>';
