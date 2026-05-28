@@ -1,55 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 160">
   <defs>
-    <linearGradient id="fire1" x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0%" stop-color="#c82712"/>
-      <stop offset="40%" stop-color="#e85d04"/>
-      <stop offset="70%" stop-color="#f48c06"/>
-      <stop offset="100%" stop-color="#ffba08"/>
+    <linearGradient id="fire1" x1="0" y1="1" x2="0.3" y2="0">
+      <stop offset="0%" stop-color="#c0392b"/>
+      <stop offset="40%" stop-color="#e8452d"/>
+      <stop offset="75%" stop-color="#f06543"/>
+      <stop offset="100%" stop-color="#ff8c42"/>
     </linearGradient>
-    <linearGradient id="fire2" x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0%" stop-color="#9d0208"/>
-      <stop offset="50%" stop-color="#dc2f02"/>
-      <stop offset="100%" stop-color="#faa307"/>
+    <linearGradient id="fire2" x1="0.7" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#a93226"/>
+      <stop offset="40%" stop-color="#d4412e"/>
+      <stop offset="75%" stop-color="#ec5e3d"/>
+      <stop offset="100%" stop-color="#ff7b3d"/>
     </linearGradient>
-    <linearGradient id="glow" x1="0.5" y1="1" x2="0.5" y2="0">
-      <stop offset="0%" stop-color="#ff6b35" stop-opacity="0.3"/>
-      <stop offset="100%" stop-color="#ffba08" stop-opacity="0.6"/>
+    <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="transparent"/>
+      <stop offset="15%" stop-color="rgba(232,69,45,0.3)"/>
+      <stop offset="50%" stop-color="rgba(232,69,45,0.6)"/>
+      <stop offset="85%" stop-color="rgba(232,69,45,0.3)"/>
+      <stop offset="100%" stop-color="transparent"/>
     </linearGradient>
-    <filter id="blur1">
-      <feGaussianBlur stdDeviation="3"/>
-    </filter>
-    <filter id="blur2">
-      <feGaussianBlur stdDeviation="6"/>
+    <filter id="softShadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#e8452d" flood-opacity="0.2"/>
     </filter>
   </defs>
 
-  <!-- 背景光晕 -->
-  <ellipse cx="200" cy="100" rx="160" ry="70" fill="url(#glow)" filter="url(#blur2)" opacity="0.5"/>
-  <ellipse cx="200" cy="80" rx="120" ry="50" fill="#ff6b35" filter="url(#blur1)" opacity="0.15"/>
+  <!-- 底部装饰线 -->
+  <line x1="60" y1="140" x2="340" y2="140" stroke="url(#lineGrad)" stroke-width="2"/>
 
-  <!-- 火焰装饰 - 左侧 -->
-  <path d="M55,130 Q40,100 50,75 Q55,60 45,45 Q58,55 60,70 Q65,55 55,35 Q63,50 68,65 Q75,45 65,25 Q72,48 75,65 Q80,50 72,30 Q76,52 80,68 Q85,88 75,110 Z" fill="url(#fire1)" opacity="0.7" filter="url(#blur1)"/>
+  <!-- 小火焰装饰 - 左 -->
+  <path d="M90,135 Q84,118 88,108 Q90,115 92,122 Q94,113 92,108 Q94,117 96,124 Q98,116 96,110 Q98,118 100,128 Q102,136 96,140 Z" fill="#e8452d" opacity="0.15"/>
 
-  <!-- 火焰装饰 - 右侧 -->
-  <path d="M325,125 Q340,95 330,70 Q325,55 335,40 Q322,50 320,65 Q315,50 325,30 Q317,45 312,60 Q305,40 315,20 Q308,43 305,60 Q300,45 308,25 Q304,47 300,63 Q295,83 305,105 Z" fill="url(#fire2)" opacity="0.7" filter="url(#blur1)"/>
+  <!-- 小火焰装饰 - 右 -->
+  <path d="M290,135 Q284,118 288,108 Q290,115 292,122 Q294,113 292,108 Q294,117 296,124 Q298,116 296,110 Q298,118 300,128 Q302,136 296,140 Z" fill="#e8452d" opacity="0.15"/>
 
-  <!-- "焰" 字 -->
-  <text x="100" y="112" text-anchor="middle" font-size="72" font-weight="900" font-family="'Microsoft YaHei','PingFang SC','SimHei',sans-serif" fill="url(#fire1)" stroke="#6a040f" stroke-width="1.5" filter="url(#blur1)">
-    焰
-  </text>
-  <text x="100" y="112" text-anchor="middle" font-size="72" font-weight="900" font-family="'Microsoft YaHei','PingFang SC','SimHei',sans-serif" fill="url(#fire1)">
-    焰
-  </text>
+  <!-- "焰" -->
+  <text x="105" y="112" text-anchor="middle" font-size="70" font-weight="900" font-family="'PingFang SC','Microsoft YaHei','SimHei',sans-serif" fill="url(#fire1)" filter="url(#softShadow)">焰</text>
 
-  <!-- "厨" 字 -->
-  <text x="275" y="112" text-anchor="middle" font-size="72" font-weight="900" font-family="'Microsoft YaHei','PingFang SC','SimHei',sans-serif" fill="url(#fire2)" stroke="#6a040f" stroke-width="1.5" filter="url(#blur1)">
-    厨
-  </text>
-  <text x="275" y="112" text-anchor="middle" font-size="72" font-weight="900" font-family="'Microsoft YaHei','PingFang SC','SimHei',sans-serif" fill="url(#fire2)">
-    厨
-  </text>
-
-  <!-- 底部火焰装饰线 -->
-  <path d="M60,135 Q100,128 130,132 Q160,136 200,130 Q240,124 270,129 Q300,134 340,128" stroke="url(#fire1)" stroke-width="2" fill="none" opacity="0.5"/>
-  <path d="M80,142 Q130,137 180,140 Q230,143 280,138 Q320,136 360,141" stroke="url(#fire2)" stroke-width="1.5" fill="none" opacity="0.3"/>
+  <!-- "厨" -->
+  <text x="275" y="112" text-anchor="middle" font-size="70" font-weight="900" font-family="'PingFang SC','Microsoft YaHei','SimHei',sans-serif" fill="url(#fire2)" filter="url(#softShadow)">厨</text>
 </svg>
