@@ -222,12 +222,13 @@ const server = http.createServer((req, res) => {
   if (url === '/api/upload' && req.method === 'POST') return uploadImage(req, res);
   if (url === '/api/config' && req.method === 'GET') return serveConfig(res);
   if (url === '/api/config' && req.method === 'POST') return saveConfig(req, res);
-  if (url === '/api/orders' && req.method === 'GET') return serveOrders(res, { date: req.url.split('date=')[1]?.split('&')[0] });
-  if (url === '/api/orders' && req.method === 'POST') return saveOrder(req, res);
+  // 归档必须在普通订单之前检查！
   if (url === '/api/orders' && req.method === 'GET' && (req.url.includes('archive') || req.url.includes('history'))) {
     sendJSON(res, readJSON(ARCHIVE_FILE, []));
     return;
   }
+  if (url === '/api/orders' && req.method === 'GET') return serveOrders(res, { date: req.url.split('date=')[1]?.split('&')[0] });
+  if (url === '/api/orders' && req.method === 'POST') return saveOrder(req, res);
   if (url === '/api/orders/reset' && req.method === 'POST') return resetOrders(req, res);
   if (url.startsWith('/api/orders/') && (req.method === 'POST' || req.method === 'PUT')) return updateOrder(req, res);
 
