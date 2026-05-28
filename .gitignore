@@ -3,3 +3,5 @@ cloudflared.exe
 uploads/
 .DS_Store
 *.log
+
+.vercel

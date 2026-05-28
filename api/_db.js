@@ -1,17 +1,19 @@
-// 云端 JSON 存储地址
+// 通过 GitHub API 读写仓库中的 JSON 文件
 const https = require('https');
-const DB = {
-  menu: 'https://jsonblob.com/api/jsonBlob/019e6c6d-f0c2-7f07-84c3-a57f9e1168e1',
-  orders: 'https://jsonblob.com/api/jsonBlob/019e6c6d-f59c-7682-b8ed-dac67baeb0f7',
-  config: 'https://jsonblob.com/api/jsonBlob/019e6c6d-f976-7b48-894b-66bef112dcda',
-};
+const TOKEN = process.env.GITHUB_TOKEN || '';
+const REPO = 'kkp110/yanchu';
 
-function fetchJSON(url, method, body) {
+function githubAPI(method, path, body) {
   return new Promise((resolve, reject) => {
-    const u = new URL(url);
     const opts = {
-      hostname: u.hostname, path: u.pathname, method: method || 'GET',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+      hostname: 'api.github.com',
+      path: '/repos/' + REPO + '/contents/' + path,
+      method: method,
+      headers: {
+        'Authorization': 'Bearer ' + TOKEN,
+        'User-Agent': 'yanchu',
+        'Accept': 'application/vnd.github+json'
+      }
     };
     const req = https.request(opts, res => {
       let data = '';
@@ -26,7 +28,22 @@ function fetchJSON(url, method, body) {
   });
 }
 
-async function readDB(key) { return await fetchJSON(DB[key], 'GET') || []; }
-async function writeDB(key, data) { return await fetchJSON(DB[key], 'PUT', data); }
+async function readDB(key) {
+  const file = key + '.json';
+  const info = await githubAPI('GET', file);
+  if (info && info.content) {
+    return JSON.parse(Buffer.from(info.content, 'base64').toString('utf-8'));
+  }
+  return key === 'orders' ? [] : (key === 'config' ? { paymentQR: '' } : []);
+}
 
-module.exports = { readDB, writeDB, DB };
+async function writeDB(key, data) {
+  const file = key + '.json';
+  // 先获取当前 SHA
+  const info = await githubAPI('GET', file);
+  const sha = info?.sha;
+  const content = Buffer.from(JSON.stringify(data, null, 2), 'utf-8').toString('base64');
+  return await githubAPI('PUT', file, { message: 'update ' + file, content, sha });
+}
+
+module.exports = { readDB, writeDB };
