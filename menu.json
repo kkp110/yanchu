@@ -23,7 +23,7 @@
     "price": 36,
     "desc": "二次烹饪，肥而不腻，蒜苗点缀。",
     "img": "images/huiguorou.svg",
-    "availableToday": false,
+    "availableToday": true,
     "category": "热菜"
   },
   {
@@ -50,7 +50,7 @@
     "price": 30,
     "desc": "冷盘川味，麻辣鲜香，适合开胃。",
     "img": "images/koushui.svg",
-    "availableToday": false,
+    "availableToday": true,
     "category": "冷盘"
   },
   {
@@ -79,5 +79,14 @@
     "img": "images/default.svg",
     "availableToday": true,
     "category": "热菜"
+  },
+  {
+    "id": 10,
+    "name": "点单测试",
+    "price": 111,
+    "category": "1",
+    "desc": "1",
+    "availableToday": true,
+    "img": "images/default.svg"
   }
 ]

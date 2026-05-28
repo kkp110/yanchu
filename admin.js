@@ -116,7 +116,7 @@ $('#itemForm').addEventListener('submit', async function(e) {
   const name = form.name.value.trim();
   const price = parseFloat(form.price.value);
   if (!name) return showToast('请输入菜名');
-  if (isNaN(price) || price < 0) return showToast('请输入有效价格');
+  if (isNaN(price) || price < 1) return showToast('价格最低 1 元');
 
   const imgFile = $('#imageInput').files[0];
   let imgPath = 'images/default.svg';
