@@ -95,6 +95,8 @@ $('#cancelEditBtn').addEventListener('click', () => {
   $('#formTitle').textContent = '➕ 添加菜品';
   $('#cancelEditBtn').style.display = 'none';
   $('#imgPreview').style.display = 'none';
+  urlLoadedImage = null;
+  if (imageUrlInput) imageUrlInput.value = '';
 });
 
 function deleteItem(idx) {
@@ -130,11 +132,42 @@ function bindImagePreview(id) {
 bindImagePreview('imageInput');
 bindImagePreview('imageInput2');
 
-// 获取选中的图片文件（从两个 input 中取）
+// 网图 URL 加载
+var urlLoadedImage = null;
+var loadUrlBtn = document.getElementById('loadUrlBtn');
+var imageUrlInput = document.getElementById('imageUrl');
+if (loadUrlBtn && imageUrlInput) {
+  loadUrlBtn.addEventListener('click', function() {
+    var url = imageUrlInput.value.trim();
+    if (!url) return showToast('请输入图片网址');
+    showToast('加载中...');
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+      var maxW = 400, w = img.width, h = img.height;
+      if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      urlLoadedImage = canvas.toDataURL('image/jpeg', 0.7);
+      var preview = document.getElementById('imgPreview');
+      var nameEl = document.getElementById('imgName');
+      if (preview) { preview.src = urlLoadedImage; preview.style.display = 'block'; }
+      if (nameEl) nameEl.textContent = '网图 (' + w + 'x' + h + ')';
+      showToast('网图已加载');
+    };
+    img.onerror = function() { showToast('加载失败，检查网址'); };
+    img.src = url;
+  });
+}
+
+// 获取选中的图片（三选一：网图 > 相册 > 拍照）
 function getSelectedImage() {
+  if (urlLoadedImage) return { dataUrl: urlLoadedImage };
   var f1 = document.getElementById('imageInput')?.files?.[0];
   var f2 = document.getElementById('imageInput2')?.files?.[0];
-  return f2 || f1;
+  var f = f2 || f1;
+  return f ? { file: f } : null;
 }
 
 $('#itemForm').addEventListener('submit', async function(e) {
@@ -146,37 +179,41 @@ $('#itemForm').addEventListener('submit', async function(e) {
   if (isNaN(price) || price < 1) return showToast('价格最低 1 元');
 
   // 图片压缩后存为 base64（手机端最可靠，不需要上传）
-  const imgFile = getSelectedImage();
+  const imgSource = getSelectedImage();
   let imgPath = form.dataset.editIdx ? (menu[parseInt(form.dataset.editIdx)]?.img || 'images/default.svg') : 'images/default.svg';
 
-  if (imgFile && imgFile.size > 0) {
+  if (imgSource) {
     showToast('处理图片...');
     try {
-      imgPath = await new Promise(function(resolve, reject) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
-          var img = new Image();
-          img.onload = function() {
-            // 缩放到最大宽度 400px，保持比例
-            var maxW = 400;
-            var w = img.width, h = img.height;
-            if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
-            var canvas = document.createElement('canvas');
-            canvas.width = w; canvas.height = h;
-            var ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, w, h);
-            // JPEG 质量 0.7，文件大小约 20-60KB
-            resolve(canvas.toDataURL('image/jpeg', 0.7));
+      if (imgSource.dataUrl) {
+        // 网图：已经压缩好了，直接用
+        imgPath = imgSource.dataUrl;
+        urlLoadedImage = null;
+        if (imageUrlInput) imageUrlInput.value = '';
+      } else if (imgSource.file) {
+        // 拍照/相册：压缩
+        imgPath = await new Promise(function(resolve, reject) {
+          var reader = new FileReader();
+          reader.onload = function(e) {
+            var img = new Image();
+            img.onload = function() {
+              var maxW = 400, w = img.width, h = img.height;
+              if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+              var canvas = document.createElement('canvas');
+              canvas.width = w; canvas.height = h;
+              canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+              resolve(canvas.toDataURL('image/jpeg', 0.7));
+            };
+            img.onerror = function() { reject(new Error('加载失败')); };
+            img.src = e.target.result;
           };
-          img.onerror = function() { reject(new Error('加载失败')); };
-          img.src = e.target.result;
-        };
-        reader.onerror = function() { reject(new Error('读取失败')); };
-        reader.readAsDataURL(imgFile);
-      });
+          reader.onerror = function() { reject(new Error('读取失败')); };
+          reader.readAsDataURL(imgSource.file);
+        });
+      }
       showToast('图片已处理');
     } catch(e) {
-      showToast('图片处理失败: ' + (e.message || ''));
+      showToast('图片处理失败');
       return;
     }
   }
@@ -194,11 +231,15 @@ $('#itemForm').addEventListener('submit', async function(e) {
   form.reset();
   if (imgInput) imgInput.value = '';
   $('#imgPreview').style.display = 'none';
+  urlLoadedImage = null;
+  if (imageUrlInput) imageUrlInput.value = '';
   form.querySelector('.mgmt-submit').textContent = '💾 保存菜品';
   $('#formTitle').textContent = '➕ 添加菜品';
   $('#cancelEditBtn').style.display = 'none';
   delete form.dataset.editIdx;
   $('#imgPreview').style.display = 'none';
+  urlLoadedImage = null;
+  if (imageUrlInput) imageUrlInput.value = '';
 });
 
 // ===== 订单 =====
