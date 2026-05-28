@@ -224,8 +224,8 @@ const server = http.createServer((req, res) => {
   if (url === '/api/config' && req.method === 'POST') return saveConfig(req, res);
   if (url === '/api/orders' && req.method === 'GET') return serveOrders(res, { date: req.url.split('date=')[1]?.split('&')[0] });
   if (url === '/api/orders' && req.method === 'POST') return saveOrder(req, res);
-  if (url === '/api/orders?archive' && req.method === 'GET') {
-    sendJSON(res, readJSON(path.join(ROOT, 'orders_archive.json'), []));
+  if (url === '/api/orders' && req.method === 'GET' && req.url.includes('archive')) {
+    sendJSON(res, readJSON(ARCHIVE_FILE, []));
     return;
   }
   if (url === '/api/orders/reset' && req.method === 'POST') return resetOrders(req, res);

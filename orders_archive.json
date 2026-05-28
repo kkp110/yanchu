@@ -1,0 +1,30 @@
+[
+  {
+    "date": "2026-05-28",
+    "archivedAt": "2026/5/28 12:31:33",
+    "orders": [
+      {
+        "people": 4,
+        "items": [
+          {
+            "name": "ˮ��ţ��",
+            "price": 48,
+            "note": "����"
+          },
+          {
+            "name": "�ɹ��˻�",
+            "price": 24,
+            "note": ""
+          }
+        ],
+        "subtotal": 72,
+        "extraFee": 4,
+        "total": 76,
+        "id": "mpozwnkeanmo",
+        "time": "2026/5/28 12:31:06",
+        "date": "2026-05-28",
+        "status": "已完成"
+      }
+    ]
+  }
+]
