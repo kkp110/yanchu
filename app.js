@@ -32,6 +32,46 @@ let currentModalItem = null;
 
 function formatPrice(n){return '￥' + Number(n).toFixed(2)}
 
+function renderFeatured(list){
+  const container = document.getElementById('featuredScroll');
+  if (!container) return;
+  // 推荐菜品：有 recommended 字段的，或前6个有货的
+  let featured = list.filter(i => i.recommended && i.availableToday);
+  if (!featured.length) featured = list.filter(i => i.availableToday).slice(0, 6);
+  if (!featured.length) { container.parentElement.style.display = 'none'; return; }
+  container.parentElement.style.display = 'block';
+  container.innerHTML = featured.map(item => `
+    <div class="featured-card" data-id="${item.id}">
+      <img src="${item.img}" alt="${item.name}" onerror="this.src='images/default.svg'" />
+      <div class="f-body">
+        <div class="f-name">${item.name}</div>
+        <div class="f-desc">${item.desc||''}</div>
+        <div class="f-bottom">
+          <span class="f-price">${formatPrice(item.price)}</span>
+          <span class="f-tag">推荐</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  // 点击事件
+  container.querySelectorAll('.featured-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const dish = list.find(i => i.id == card.dataset.id);
+      if (dish) { addToCart(dish); showCartToast(dish.name + ' 已加入'); }
+    });
+  });
+  // 自动滚动
+  let scrollPos = 0;
+  const scrollWidth = container.scrollWidth - container.clientWidth;
+  if (scrollWidth > 0) {
+    setInterval(() => {
+      scrollPos += 1;
+      if (scrollPos >= scrollWidth) scrollPos = 0;
+      container.scrollLeft = scrollPos;
+    }, 50);
+  }
+}
+
 function renderList(list){
   grid.innerHTML = '';
   if (!list.length) {
@@ -207,6 +247,7 @@ async function loadMenu(){
     const res = await fetch('menu.json?' + Date.now());
     if (!res.ok) throw new Error('无法加载菜单');
     menu = await res.json();
+    renderFeatured(menu);
     renderList(menu);
   } catch(e){ grid.innerHTML = '<div class="error">'+e.message+'</div>'; }
 }
