@@ -13,7 +13,6 @@ $$('.tab-btn').forEach(btn => {
     $$('.tab-content').forEach(c => c.classList.remove('active'));
     $('#' + btn.dataset.tab).classList.add('active');
     if (btn.dataset.tab === 'tab-orders') loadOrders();
-    if (btn.dataset.tab === 'tab-payment') loadPaymentConfig();
   });
 });
 
@@ -123,22 +122,6 @@ $('#itemForm').addEventListener('submit', async function(e) {
   await saveMenu(); form.reset(); $('#imageInput').value = '';
 });
 
-// ===== 收款码 =====
-async function loadPaymentConfig() {
-  try { const cfg = await readFile('config.json');
-    if (cfg.paymentQR) { $('#currentQR').src=cfg.paymentQR; $('#currentQR').style.display='block'; $('#noQR').style.display='none'; }
-  } catch(e){}
-}
-
-$('#savePaymentQR').addEventListener('click', async function() {
-  checkToken();
-  const file = $('#paymentQRInput').files[0];
-  if (!file) return showToast('请先选择收款码图片');
-  const qrData = await new Promise(r => { const reader = new FileReader(); reader.onload = () => r(reader.result); reader.readAsDataURL(file); });
-  const ok = await writeFile('config.json', { paymentQR: qrData });
-  if (ok) { showToast('收款码已保存'); loadPaymentConfig(); }
-});
-
 // ===== 订单 =====
 async function loadOrders() {
   const c = $('#orderListContainer');
@@ -170,12 +153,17 @@ function speakOrder(order) {
   if (!voiceEnabled) return;
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
-    const items = order.items.map(i => i.name + (i.note ? '，' + i.note : '')).join('。');
-    const text = `新订单！${order.people}人就餐。${items}。合计${Number(order.total).toFixed(2)}元。`;
+    const itemTexts = order.items.map((i, idx) => {
+      let t = `第${idx+1}道，${i.name}`;
+      if (i.note) t += `，备注，${i.note}`;
+      return t;
+    }).join('。');
+    const text = `叮咚！来新订单了！${order.people}位顾客。${itemTexts}。以上，共${order.items.length}道菜，合计${Number(order.total).toFixed(2)}元。`;
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = 'zh-CN';
-    utter.rate = 0.9;
-    utter.pitch = 1;
+    utter.rate = 0.85;
+    utter.pitch = 1.1;
+    utter.volume = 1;
     window.speechSynthesis.speak(utter);
   }
 }
@@ -235,4 +223,4 @@ function showToast(msg) {
   clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('show'),2000);
 }
 
-loadMenu(); loadPaymentConfig();
+loadMenu();
