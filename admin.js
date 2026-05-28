@@ -60,17 +60,32 @@ function renderList() {
   const c = $('#itemList');
   if (!menu.length) { c.innerHTML = '<p style="color:var(--muted)">暂无菜品，请添加。</p>'; return; }
   c.innerHTML = menu.map((item, i) => `
-    <div class="dish-item">
+    <div class="dish-item" style="${!item.availableToday ? 'opacity:0.5' : ''}">
       <img src="${item.img}" alt="${item.name}" onerror="this.src='images/default.svg'" />
       <div class="dish-info">
-        <strong>${item.name}</strong>
+        <strong>${item.name} ${item.recommended ? '🔥' : ''}</strong>
         <span>¥${Number(item.price).toFixed(2)} · ${item.category||'未分类'} · ${item.availableToday?'有货':'售罄'}</span>
       </div>
       <div class="dish-actions">
+        <button class="btn-toggle-avail" data-idx="${i}" style="padding:5px 10px;border-radius:6px;border:0;font-size:11px;cursor:pointer;background:${item.availableToday?'#e8f5e9':'#fbe9e7'};color:${item.availableToday?'#2e7d32':'#c62828'}">${item.availableToday?'有货':'售罄'}</button>
+        <button class="btn-toggle-rec" data-idx="${i}" style="padding:5px 10px;border-radius:6px;border:0;font-size:11px;cursor:pointer;background:${item.recommended?'#fff3e0':'#f5f5f5'};color:${item.recommended?'#e65100':'#999'}">${item.recommended?'🔥推荐':'推荐'}</button>
         <button class="btn-edit" data-idx="${i}">编辑</button>
         <button class="btn-del" data-idx="${i}">删除</button>
       </div>
     </div>`).join('');
+
+  // 快速切换有货/售罄
+  $$('.btn-toggle-avail').forEach(b => b.addEventListener('click', async () => {
+    const idx = parseInt(b.dataset.idx);
+    menu[idx].availableToday = !menu[idx].availableToday;
+    await saveMenu();
+  }));
+  // 快速切换推荐
+  $$('.btn-toggle-rec').forEach(b => b.addEventListener('click', async () => {
+    const idx = parseInt(b.dataset.idx);
+    menu[idx].recommended = !menu[idx].recommended;
+    await saveMenu();
+  }));
   $$('.btn-edit').forEach(b => b.addEventListener('click', () => editItem(parseInt(b.dataset.idx))));
   $$('.btn-del').forEach(b => b.addEventListener('click', () => deleteItem(parseInt(b.dataset.idx))));
 }
