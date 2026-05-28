@@ -265,12 +265,12 @@ async function submitOrder(){
 }
 
 async function loadConfig(){
-  try { const r = await fetch('config.json?' + Date.now()); if(r.ok){ const c = await r.json(); paymentQR = c.paymentQR || ''; } } catch(e){}
+  try { const r = await fetch('/api/config?' + Date.now()); if(r.ok){ const c = await r.json(); paymentQR = c.paymentQR || ''; } } catch(e){}
 }
 
 async function loadMenu(){
   try {
-    const res = await fetch('menu.json?' + Date.now());
+    const res = await fetch('/api/menu?' + Date.now());
     if (!res.ok) throw new Error('无法加载菜单');
     menu = await res.json();
     renderFeatured(menu);
