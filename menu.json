@@ -72,25 +72,5 @@
     "img": "images/suancaiyu.svg",
     "availableToday": true,
     "category": "主菜"
-  },
-  {
-    "id": 9,
-    "name": "11",
-    "price": 2,
-    "desc": "1",
-    "img": "images/default.svg",
-    "availableToday": true,
-    "category": "热菜",
-    "recommended": true
-  },
-  {
-    "id": 10,
-    "name": "点单测试",
-    "price": 111,
-    "category": "1",
-    "desc": "1",
-    "availableToday": true,
-    "img": "images/default.svg",
-    "recommended": true
   }
 ]

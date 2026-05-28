@@ -3,30 +3,43 @@
     "people": 2,
     "items": [
       {
-        "name": "ˮ��ţ��",
-        "price": 48,
-        "note": "����"
-      }
-    ],
-    "total": 48,
-    "id": "mpp0jmtmsxow",
-    "time": "2026/5/28 12:48:58",
-    "date": "2026-05-28",
-    "status": "已下单"
-  },
-  {
-    "people": 2,
-    "items": [
+        "name": "水煮牛肉",
+        "price": 48
+      },
       {
-        "name": "点单测试",
-        "price": 111
+        "name": "水煮牛肉",
+        "price": 48
+      },
+      {
+        "name": "麻婆豆腐",
+        "price": 22
+      },
+      {
+        "name": "回锅肉",
+        "price": 36
+      },
+      {
+        "name": "鱼香肉丝",
+        "price": 26
+      },
+      {
+        "name": "口水鸡",
+        "price": 30
+      },
+      {
+        "name": "酸菜鱼",
+        "price": 58
+      },
+      {
+        "name": "干锅菜花",
+        "price": 24
       }
     ],
-    "subtotal": 111,
+    "subtotal": 292,
     "extraFee": 0,
-    "total": 111,
-    "id": "mpp0gvfz88nx",
-    "time": "2026/5/28 12:46:50",
+    "total": 292,
+    "id": "mpp0ow79yilf",
+    "time": "2026/5/28 12:53:04",
     "date": "2026-05-28",
     "status": "已下单"
   }
