@@ -118,29 +118,40 @@ $('#itemForm').addEventListener('submit', async function(e) {
   if (!name) return showToast('请输入菜名');
   if (isNaN(price) || price < 1) return showToast('价格最低 1 元');
 
-  // 处理图片：上传到服务器存为文件（不受JSON大小限制）
+  // 图片压缩后存为 base64（手机端最可靠，不需要上传）
   const imgInput = document.getElementById('imageInput');
   const imgFile = imgInput?.files?.[0];
   let imgPath = form.dataset.editIdx ? (menu[parseInt(form.dataset.editIdx)]?.img || 'images/default.svg') : 'images/default.svg';
 
   if (imgFile && imgFile.size > 0) {
-    showToast('图片上传中...');
+    showToast('处理图片...');
     try {
-      const uRes = await fetch('/api/upload', { method: 'POST', body: imgFile });
-      const uData = await uRes.json();
-      if (uData.ok) { imgPath = uData.path; showToast('图片已上传'); }
-      else throw new Error(uData.message);
+      imgPath = await new Promise(function(resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var img = new Image();
+          img.onload = function() {
+            // 缩放到最大宽度 400px，保持比例
+            var maxW = 400;
+            var w = img.width, h = img.height;
+            if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+            var canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            // JPEG 质量 0.7，文件大小约 20-60KB
+            resolve(canvas.toDataURL('image/jpeg', 0.7));
+          };
+          img.onerror = function() { reject(new Error('加载失败')); };
+          img.src = e.target.result;
+        };
+        reader.onerror = function() { reject(new Error('读取失败')); };
+        reader.readAsDataURL(imgFile);
+      });
+      showToast('图片已处理');
     } catch(e) {
-      // 上传失败，小图用 base64 兜底
-      if (imgFile.size < 200000) {
-        imgPath = await new Promise(function(resolve) {
-          var r = new FileReader();
-          r.onload = function() { resolve(r.result); };
-          r.readAsDataURL(imgFile);
-        });
-      } else {
-        showToast('图片上传失败，请重试'); return;
-      }
+      showToast('图片处理失败: ' + (e.message || ''));
+      return;
     }
   }
 
