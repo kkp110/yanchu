@@ -365,73 +365,50 @@ function playBeep() {
   } catch(e) {}
 }
 
+// 待播报订单队列（移动端语音需用户手势）
+let pendingOrder = null;
+
 function speakOrder(order) {
   if (!voiceEnabled) return;
   notifyOrder(order);
   startAlarm();
   playBeep();
+  pendingOrder = order;
+  showToast('📢 新订单！点击屏幕听播报');
+}
+
+// 点击屏幕触发中文语音
+document.addEventListener('click', function() {
+  if (!pendingOrder) return;
+  const order = pendingOrder;
+  pendingOrder = null;
   if (!('speechSynthesis' in window)) return;
 
-  // 详细播报续行 — 确保 voices 已加载
-  const doSpeak = () => {
-    window.speechSynthesis.cancel();
-    const voices = window.speechSynthesis.getVoices();
-    // 找中文语音
-    const zhVoice = voices.find(v => v.lang === 'zh-CN' && v.name.includes('TingTing')) ||
-                    voices.find(v => v.lang === 'zh-CN' && v.name.includes('Xiaoxiao')) ||
-                    voices.find(v => v.lang === 'zh-CN' && v.name.includes('Yaoyao')) ||
-                    voices.find(v => v.lang === 'zh-CN') ||
-                    voices.find(v => v.lang.startsWith('zh-')) ||
-                    voices.find(v => v.lang === 'zh-HK') ||
-                    voices.find(v => v.lang === 'zh-TW');
-
-    // 逐条播报（避免长文本被截断）
-    const lines = [];
-    lines.push(`叮咚！来新订单了！${order.people}位顾客。`);
-    order.items.forEach((i, idx) => {
-      let t = `第${idx+1}道，${i.name}`;
-      if (i.note) t += `，备注，${i.note}`;
-      lines.push(t);
-    });
-    lines.push(`以上共${order.items.length}道菜，合计${Number(order.total).toFixed(2)}元。`);
-
-    let idx = 0;
-    function speakNext() {
-      if (idx >= lines.length) { stopAlarm(); return; }
-      const utter = new SpeechSynthesisUtterance(lines[idx]);
-      utter.lang = 'zh-CN';
-      utter.rate = 0.85;
-      utter.pitch = 1.1;
-      utter.volume = 1;
-      if (zhVoice) utter.voice = zhVoice;
-      utter.onend = () => { idx++; setTimeout(speakNext, 100); };
-      utter.onerror = () => { idx++; setTimeout(speakNext, 100); };
-      window.speechSynthesis.speak(utter);
-    }
-    speakNext();
-  };
-
-  // 等待 voices 加载（手机浏览器可能异步）
+  window.speechSynthesis.cancel();
   const voices = window.speechSynthesis.getVoices();
-  if (voices.length > 0) {
-    setTimeout(doSpeak, 200);
-  } else {
-    window.speechSynthesis.onvoiceschanged = () => {
-      window.speechSynthesis.onvoiceschanged = null;
-      setTimeout(doSpeak, 200);
-    };
-  }
-}
+  const zhVoice = voices.find(v => v.lang === 'zh-CN' && v.name.includes('TingTing')) ||
+                  voices.find(v => v.lang === 'zh-CN' && v.name.includes('Xiaoxiao')) ||
+                  voices.find(v => v.lang === 'zh-CN') ||
+                  voices.find(v => v.lang.startsWith('zh-'));
 
-// 预加载中文语音
-if ('speechSynthesis' in window) {
-  window.speechSynthesis.getVoices();
-  window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
-  document.addEventListener('click', function initSpeech() {
-    const u = new SpeechSynthesisUtterance('');
-    u.volume = 0; window.speechSynthesis.speak(u);
-  }, { once: true });
-}
+  let text = '叮咚！来新订单了！' + order.people + '位顾客。';
+  order.items.forEach(function(i, idx) {
+    text += '第' + (idx+1) + '道，' + i.name;
+    if (i.note) text += '，备注，' + i.note;
+    text += '。';
+  });
+  text += '以上共' + order.items.length + '道菜，合计' + Number(order.total).toFixed(2) + '元。';
+
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'zh-CN';
+  utter.rate = 0.85;
+  utter.pitch = 1.1;
+  utter.volume = 1;
+  if (zhVoice) utter.voice = zhVoice;
+  utter.onend = function() { stopAlarm(); };
+  utter.onerror = function() { stopAlarm(); };
+  window.speechSynthesis.speak(utter);
+});
 
 // 保持手机屏幕唤醒
 async function requestWakeLock() {
