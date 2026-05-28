@@ -118,7 +118,7 @@ $('#itemForm').addEventListener('submit', async function(e) {
   if (!name) return showToast('请输入菜名');
   if (isNaN(price) || price < 1) return showToast('价格最低 1 元');
 
-  const imgFile = document.getElementById('imageInput')?.files?.[0];
+  const imgFile = $('#imageInput').files[0];
   let imgPath = 'images/default.svg';
   if (imgFile) {
     imgPath = await new Promise(r => { const reader = new FileReader(); reader.onload = () => r(reader.result); reader.readAsDataURL(imgFile); });
@@ -365,56 +365,43 @@ function playBeep() {
   } catch(e) {}
 }
 
-// 待播报订单
-let pendingOrder = null;
-
-function doChineseSpeech(order) {
-  if (!('speechSynthesis' in window)) return;
-  window.speechSynthesis.cancel();
-  const voices = window.speechSynthesis.getVoices();
-  const zh = voices.find(v => v.lang === 'zh-CN' && v.name.includes('TingTing')) ||
-             voices.find(v => v.lang === 'zh-CN' && v.name.includes('Xiaoxiao')) ||
-             voices.find(v => v.lang === 'zh-CN') ||
-             voices.find(v => v.lang.startsWith('zh-'));
-  let t = '叮咚！新订单，' + order.people + '位。';
-  order.items.forEach(function(i, idx) {
-    t += '第' + (idx+1) + '道' + i.name;
-    if (i.note) t += '，备注' + i.note;
-    t += '。';
-  });
-  t += '合计' + Number(order.total).toFixed(2) + '元。';
-  const u = new SpeechSynthesisUtterance(t);
-  u.lang = 'zh-CN'; u.rate = 0.9; u.volume = 1;
-  if (zh) u.voice = zh;
-  u.onend = stopAlarm; u.onerror = stopAlarm;
-  window.speechSynthesis.speak(u);
-}
-
-// 大按钮（手机上最显眼）
-const speakBtn = document.createElement('button');
-speakBtn.id = "speakNowBtn"; speakBtn.textContent = '🔊 点击听取新订单';
-speakBtn.style.cssText = 'position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);z-index:999;padding:20px 40px;border-radius:30px;border:3px solid #fff;background:#e8452d;color:#fff;font-size:18px;font-weight:800;cursor:pointer;box-shadow:0 8px 36px rgba(232,69,45,0.6);display:none';
-speakBtn.addEventListener('click', function(e) {
-  e.stopPropagation(); speakBtn.style.display = 'none';
-  if (pendingOrder) { var o = pendingOrder; pendingOrder = null; doChineseSpeech(o); }
-});
-speakBtn.addEventListener('touchend', function(e) {
-  e.stopPropagation(); speakBtn.style.display = 'none';
-  if (pendingOrder) { var o = pendingOrder; pendingOrder = null; doChineseSpeech(o); }
-});
-document.body.appendChild(speakBtn);
+var bigPopup = document.createElement('div');
+bigPopup.id = 'bigOrderPopup';
+bigPopup.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.93);display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center';
+bigPopup.innerHTML = '<div id="bigOrderContent" style="color:#fff;font-size:22px;line-height:2;font-weight:700;max-height:70vh;overflow:auto"></div><button id="bigOrderClose" style="margin-top:20px;padding:14px 44px;border-radius:28px;border:0;background:#e8452d;color:#fff;font-size:20px;font-weight:800;cursor:pointer">我知道了</button>';
+document.body.appendChild(bigPopup);
+document.getElementById('bigOrderClose').addEventListener('click', function() { bigPopup.style.display = 'none'; stopAlarm(); });
+document.getElementById('bigOrderClose').addEventListener('touchend', function(e) { e.preventDefault(); bigPopup.style.display = 'none'; stopAlarm(); });
 
 function speakOrder(order) {
   if (!voiceEnabled) return;
   notifyOrder(order); startAlarm(); playBeep();
-  pendingOrder = order;
-  speakBtn.style.display = 'block';
+  var h = '<div style="font-size:34px;color:#ff6b35;margin-bottom:10px">🔥 新订单</div>';
+  h += '<div style="font-size:18px;color:#aaa;margin-bottom:14px">' + order.people + '人</div>';
+  order.items.forEach(function(i) {
+    h += '<div style="margin:6px 0"><span style="color:#fff;font-size:22px">' + i.name + '</span>';
+    if (i.note) h += '<div style="color:#ff9800;font-size:16px;margin-top:2px">📝' + i.note + '</div>';
+    h += '</div>';
+  });
+  h += '<div style="margin-top:16px;font-size:30px;color:#ff6b35;font-weight:800">' + Number(order.total).toFixed(2) + ' 元</div>';
+  document.getElementById('bigOrderContent').innerHTML = h;
+  bigPopup.style.display = 'flex';
+  try {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      var vs = window.speechSynthesis.getVoices();
+      var zh = vs.find(function(v) { return v.lang.indexOf('zh') === 0; });
+      var txt = '新订单' + order.people + '位。';
+      order.items.forEach(function(i) { txt += i.name + (i.note ? '备注' + i.note : '') + '。'; });
+      txt += '合计' + Number(order.total).toFixed(2) + '元。';
+      var u = new SpeechSynthesisUtterance(txt);
+      u.lang = 'zh-CN'; u.rate = 0.85; u.volume = 1;
+      if (zh) u.voice = zh;
+      u.onend = stopAlarm;
+      window.speechSynthesis.speak(u);
+    }
+  } catch(e) {}
 }
-
-// 按钮呼吸动画
-var s = document.createElement('style');
-s.textContent = '@keyframes pulse2{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.08)}}#speakNowBtn{animation:pulse2 0.8s infinite}';
-document.head.appendChild(s);
 
 // 保持手机屏幕唤醒
 async function requestWakeLock() {
