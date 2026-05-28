@@ -110,6 +110,23 @@ async function saveMenu() {
   } catch(e) { showToast('保存失败: ' + e.message); }
 }
 
+// 手机拍照后立即预览
+var imgInputEl = document.getElementById('imageInput');
+if (imgInputEl) {
+  imgInputEl.addEventListener('change', function() {
+    var f = this.files?.[0];
+    if (!f) return;
+    var nameEl = document.getElementById('imgName');
+    if (nameEl) nameEl.textContent = f.name + ' (' + (f.size/1024).toFixed(0) + 'KB)';
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var preview = document.getElementById('imgPreview');
+      if (preview) { preview.src = e.target.result; preview.style.display = 'block'; }
+    };
+    reader.readAsDataURL(f);
+  });
+}
+
 $('#itemForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   const form = e.target;

@@ -10,60 +10,25 @@
     "subtotal": 58,
     "extraFee": 0,
     "total": 58,
-    "id": "mpp2xx8fmwrq",
-    "time": "2026/5/28 13:56:04",
+    "id": "mpp3c3w32ddo",
+    "time": "2026/5/28 14:07:06",
     "date": "2026-05-28",
-    "status": "已完成"
+    "status": "已下单"
   },
   {
     "people": 2,
     "items": [
-      {
-        "name": "酸菜鱼",
-        "price": 58
-      }
-    ],
-    "subtotal": 58,
-    "extraFee": 0,
-    "total": 58,
-    "id": "mpp2trnjzwui",
-    "time": "2026/5/28 13:52:51",
-    "date": "2026-05-28",
-    "status": "已取消"
-  },
-  {
-    "people": 2,
-    "items": [
-      {
-        "name": "��������",
-        "price": 28,
-        "note": "����"
-      }
-    ],
-    "total": 28,
-    "id": "mpp2sx3217m9",
-    "time": "2026/5/28 13:52:11",
-    "date": "2026-05-28",
-    "status": "已取消"
-  },
-  {
-    "people": 2,
-    "items": [
-      {
-        "name": "招牌宫保鸡丁",
-        "price": 28
-      },
       {
         "name": "水煮牛肉",
         "price": 48
       }
     ],
-    "subtotal": 76,
+    "subtotal": 48,
     "extraFee": 0,
-    "total": 76,
-    "id": "mpp2pvemfxiu",
-    "time": "2026/5/28 13:49:49",
+    "total": 48,
+    "id": "mpp34v35d3ce",
+    "time": "2026/5/28 14:01:28",
     "date": "2026-05-28",
-    "status": "已取消"
+    "status": "已下单"
   }
 ]

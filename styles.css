@@ -626,6 +626,15 @@ body{
   cursor:pointer;margin-top:4px;
 }
 .mgmt-submit:active{background:#c0392b}
+
+/* 拍照按钮 */
+.camera-btn{
+  display:inline-block;padding:12px 24px;border-radius:12px;
+  background:#f0ebe4;color:#555;font-size:15px;font-weight:600;
+  cursor:pointer;text-align:center;border:2px dashed #d0c8c0;
+  transition:all .15s;
+}
+.camera-btn:active{background:#e0d8d0}
 .mgmt-list-header{
   display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;
 }

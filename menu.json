@@ -74,15 +74,6 @@
     "recommended": true
   },
   {
-    "id": 9,
-    "name": "11",
-    "price": 2,
-    "desc": "1",
-    "img": "images/default.svg",
-    "availableToday": true,
-    "category": "热菜"
-  },
-  {
     "id": 10,
     "name": "点单测试",
     "price": 111,
@@ -91,5 +82,14 @@
     "availableToday": true,
     "img": "images/default.svg",
     "recommended": true
+  },
+  {
+    "id": 11,
+    "name": "11",
+    "price": 1121,
+    "category": "11",
+    "desc": "1",
+    "availableToday": true,
+    "img": "images/default.svg"
   }
 ]
