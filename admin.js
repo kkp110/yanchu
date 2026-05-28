@@ -3,7 +3,6 @@ let githubToken = localStorage.getItem('yanchu_token') || '';
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 
-const RAW = 'https://raw.githubusercontent.com/kkp110/yanchu/main';
 const GITHUB_API = 'https://api.github.com/repos/kkp110/yanchu/contents';
 
 // Tab 切换
@@ -20,7 +19,7 @@ $$('.tab-btn').forEach(btn => {
 
 // ===== GitHub API 读写 =====
 async function readFile(path) {
-  const r = await fetch(`${RAW}/${path}?${Date.now()}`);
+  const r = await fetch(`${path}?${Date.now()}`);
   if (!r.ok) throw new Error('读取失败');
   return await r.json();
 }

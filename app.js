@@ -3,8 +3,7 @@ let cart = [];
 let peopleCount = 2;
 let paymentQR = '';
 
-// 从 GitHub 仓库读取数据（免费、安全、HTTPS）
-const RAW = 'https://raw.githubusercontent.com/kkp110/yanchu/main';
+// 同域读取数据文件（无跨域问题）
 
 const grid = document.getElementById('menuGrid');
 const search = document.getElementById('search');
@@ -157,12 +156,12 @@ async function submitOrder(){
 }
 
 async function loadConfig(){
-  try { const r = await fetch(RAW + '/config.json?' + Date.now()); if(r.ok){ const c = await r.json(); paymentQR = c.paymentQR || ''; } } catch(e){}
+  try { const r = await fetch('config.json?' + Date.now()); if(r.ok){ const c = await r.json(); paymentQR = c.paymentQR || ''; } } catch(e){}
 }
 
 async function loadMenu(){
   try {
-    const res = await fetch(RAW + '/menu.json?' + Date.now());
+    const res = await fetch('menu.json?' + Date.now());
     if (!res.ok) throw new Error('无法加载菜单');
     menu = await res.json();
     renderList(menu);
