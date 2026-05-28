@@ -12,13 +12,18 @@
 body{
   font-family: 'PingFang SC','Microsoft YaHei','Helvetica Neue',sans-serif;
   margin:0;
-  background: #0d0d0d;
+  background-color: #0a0a0c;
   background-image:
-    radial-gradient(ellipse 800px 500px at 50% -15%, rgba(232,93,4,0.12) 0%, transparent 55%),
-    radial-gradient(ellipse 400px 600px at 15% 60%, rgba(200,39,18,0.06) 0%, transparent 50%),
-    radial-gradient(ellipse 400px 600px at 85% 40%, rgba(244,164,96,0.04) 0%, transparent 50%),
-    radial-gradient(ellipse 300px 200px at 50% 90%, rgba(220,47,2,0.05) 0%, transparent 50%),
-    url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 L31 29 L55 30 L31 31 L30 55 L29 31 L5 30 L29 29 Z' fill='rgba(255,255,255,0.015)'/%3E%3C/svg%3E");
+    /* 顶部强火焰光 */
+    radial-gradient(ellipse 900px 500px at 50% -10%, rgba(255,107,35,0.2) 0%, rgba(232,93,4,0.1) 30%, transparent 55%),
+    /* 左侧火焰 */
+    radial-gradient(ellipse 500px 700px at 10% 50%, rgba(200,39,18,0.12) 0%, transparent 55%),
+    /* 右侧暖光 */
+    radial-gradient(ellipse 500px 700px at 90% 40%, rgba(244,140,66,0.08) 0%, transparent 55%),
+    /* 底部 */
+    radial-gradient(ellipse 400px 300px at 50% 95%, rgba(180,30,10,0.1) 0%, transparent 50%),
+    /* 纹理 */
+    url("data:image/svg+xml,%3Csvg width='80' height='80' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='p' width='20' height='20' patternUnits='userSpaceOnUse'%3E%3Ccircle cx='10' cy='10' r='0.8' fill='rgba(255,255,255,0.03)'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='80' height='80' fill='url(%23p)'/%3E%3C/svg%3E");
   color:#eee;
   min-height:100vh;
 }
@@ -37,20 +42,30 @@ body::after{left:28%;animation-name:float2;animation-delay:3s}
 
 /* --- Header --- */
 .site-header{
-  padding:40px 20px 28px;
+  padding:44px 20px 32px;
   text-align:center;
   position:relative;
   z-index:1;
-  background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(15,5,0,0.3) 65%, transparent 100%);
+  background: linear-gradient(180deg, rgba(15,3,0,0.75) 0%, rgba(25,8,0,0.5) 50%, transparent 100%);
+}
+.site-header::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,transparent,#e85d04,#f4a460,#e85d04,transparent);
 }
 .site-header::after{
   content:'';
   position:absolute;bottom:0;left:15%;right:15%;height:2px;
-  background:linear-gradient(90deg,transparent,rgba(232,93,4,0.6),rgba(244,164,96,0.9),rgba(232,93,4,0.6),transparent);
+  background:linear-gradient(90deg,transparent,rgba(232,93,4,0.8),rgba(244,164,96,1),rgba(232,93,4,0.8),transparent);
 }
 .site-header .logo{
-  display:block;width:180px;height:72px;margin:0 auto 10px;
-  filter:drop-shadow(0 4px 12px rgba(232,93,4,0.3));
+  display:block;width:180px;height:72px;margin:0 auto 12px;
+  filter:drop-shadow(0 4px 16px rgba(232,93,4,0.4));
+  animation: logoGlow 3s ease-in-out infinite;
+}
+@keyframes logoGlow{
+  0%,100%{filter:drop-shadow(0 4px 16px rgba(232,93,4,0.3))}
+  50%{filter:drop-shadow(0 4px 24px rgba(255,140,60,0.55))}
 }
 .site-header .logo img{width:100%;height:100%}
 .subtitle{
