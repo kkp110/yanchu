@@ -15,8 +15,7 @@ $$('.tab-btn').forEach(btn => {
 
 // ===== 数据读写（本地服务器API） =====
 async function readFile(path) {
-  const apiPath = path.replace('.json', ''); // menu.json → /api/menu
-  const r = await fetch(`/api/${apiPath}?${Date.now()}`);
+  const r = await fetch(`${path}?${Date.now()}`);
   if (!r.ok) throw new Error('读取失败');
   return await r.json();
 }
