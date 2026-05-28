@@ -60,29 +60,42 @@ function renderFeatured(list){
       if (dish) { addToCart(dish); showCartToast(dish.name + ' 已加入'); }
     });
   });
-  // 自动滚动（手动滑动时暂停）
+  // 平滑自动滚动（手动滑动时暂停，松手恢复）
   let scrollPaused = false;
-  let scrollTimer = null;
+  let scrollRAF = null;
+  let scrollSpeed = 0.6; // 每帧移动的像素，控制速度
 
-  function startAutoScroll() {
-    if (scrollTimer) return;
-    const maxScroll = container.scrollWidth - container.clientWidth;
-    if (maxScroll <= 0) return;
-    let dir = 1;
-    scrollTimer = setInterval(() => {
-      if (scrollPaused) return;
-      if (container.scrollLeft >= maxScroll - 2) dir = -1;
-      if (container.scrollLeft <= 2) dir = 1;
-      container.scrollLeft += dir;
-    }, 40);
+  function autoScroll() {
+    if (!scrollPaused) {
+      const maxScroll = container.scrollWidth - container.clientWidth;
+      if (maxScroll > 0) {
+        container.scrollLeft += scrollSpeed;
+        // 滚到末尾时，停顿一下再回到开头
+        if (container.scrollLeft >= maxScroll - 2) {
+          scrollPaused = true;
+          setTimeout(() => {
+            container.scrollTo({ left: 0, behavior: 'smooth' });
+            setTimeout(() => { scrollPaused = false; }, 600);
+          }, 1500);
+        }
+      }
+    }
+    scrollRAF = requestAnimationFrame(autoScroll);
   }
 
   container.addEventListener('touchstart', () => { scrollPaused = true; });
-  container.addEventListener('touchend', () => { setTimeout(() => { scrollPaused = false; }, 2000); });
+  container.addEventListener('touchend', () => { setTimeout(() => { scrollPaused = false; }, 2500); });
   container.addEventListener('mouseenter', () => { scrollPaused = true; });
-  container.addEventListener('mouseleave', () => { setTimeout(() => { scrollPaused = false; }, 1500); });
+  container.addEventListener('mouseleave', () => { setTimeout(() => { scrollPaused = false; }, 2000); });
+  // 手动滚动时也暂停
+  container.addEventListener('scroll', () => {
+    if (scrollPaused) return;
+    scrollPaused = true;
+    clearTimeout(container._pauseTimer);
+    container._pauseTimer = setTimeout(() => { scrollPaused = false; }, 2500);
+  });
 
-  startAutoScroll();
+  autoScroll();
 }
 
 function renderList(list){
