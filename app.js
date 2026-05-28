@@ -45,21 +45,32 @@ function renderList(list){
     card.tabIndex = 0;
     const inCart = cart.filter(c => c.id === item.id).length;
     card.innerHTML = `
-      <div class="card-img-wrap">
+      <div class="card-img-wrap" data-action="detail">
         <img src="${item.img}" alt="${item.name}" loading="lazy" onerror="this.src='images/default.svg'" />
         <span class="card-badge ${item.availableToday? 'badge-on':'badge-off'}">${item.availableToday? '今日有货':'今日售罄'}</span>
         ${inCart ? '<span class="cart-tag">已选×'+inCart+'</span>' : ''}
       </div>
-      <div class="card-body">
+      <div class="card-body" data-action="detail">
         <div class="card-header">
           <h3>${item.name}</h3>
           <span class="card-cat">${item.category||''}</span>
         </div>
         <p class="card-desc">${item.desc || ''}</p>
-        <div class="card-price">${formatPrice(item.price)}</div>
+        <div class="card-bottom">
+          <span class="card-price">${formatPrice(item.price)}</span>
+          ${item.availableToday ? `<button class="card-add-btn" data-action="add" data-id="${item.id}">加入</button>` : '<button class="card-add-btn off" disabled>售罄</button>'}
+        </div>
       </div>
     `;
-    card.addEventListener('click',()=>openModal(item));
+    // 点击加入按钮
+    card.querySelector('[data-action="add"]')?.addEventListener('click', e => {
+      e.stopPropagation();
+      if (item.availableToday) addToCart(item);
+    });
+    // 点击其他区域打开详情
+    card.querySelectorAll('[data-action="detail"]').forEach(el => {
+      el.addEventListener('click', () => openModal(item));
+    });
     card.addEventListener('keypress',e=>{ if(e.key==='Enter') openModal(item) });
     grid.appendChild(card);
   });
