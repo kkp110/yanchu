@@ -127,32 +127,106 @@ async function loadOrders() {
   const c = $('#orderListContainer');
   try { const orders = await readFile('orders.json');
     if (!orders.length) { c.innerHTML='<p style="color:#999;text-align:center;padding:30px">暂无订单</p>'; return; }
-    c.innerHTML = orders.map(o => `
-      <div class="order-item">
+    // 有效订单（未取消的）
+    const activeOrders = orders.filter(o => o.status !== '已取消' && o.status !== '已完成');
+    const cancelledOrders = orders.filter(o => o.status === '已取消');
+    const completedOrders = orders.filter(o => o.status === '已完成');
+    const activeTotal = activeOrders.reduce((s, o) => s + Number(o.total), 0);
+
+    // 营收摘要
+    let summaryHTML = `
+      <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+        <div style="flex:1;min-width:80px;background:#fff3e0;border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:12px;color:#999">待处理</div>
+          <div style="font-size:24px;font-weight:800;color:#e65100">${activeOrders.length}</div>
+          <div style="font-size:12px;color:#e65100">￥${activeTotal.toFixed(2)}</div>
+        </div>
+        <div style="flex:1;min-width:80px;background:#e8f5e9;border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:12px;color:#999">已完成</div>
+          <div style="font-size:24px;font-weight:800;color:#2e7d32">${completedOrders.length}</div>
+          <div style="font-size:12px;color:#2e7d32">￥${completedOrders.reduce((s,o)=>s+Number(o.total),0).toFixed(2)}</div>
+        </div>
+        <div style="flex:1;min-width:80px;background:#fbe9e7;border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:12px;color:#999">已取消</div>
+          <div style="font-size:24px;font-weight:800;color:#c62828">${cancelledOrders.length}</div>
+          <div style="font-size:12px;color:#c62828">￥${cancelledOrders.reduce((s,o)=>s+Number(o.total),0).toFixed(2)}</div>
+        </div>
+      </div>`;
+
+    c.innerHTML = summaryHTML + orders.map(o => {
+      const isActive = o.status === '已下单';
+      const isDone = o.status === '已完成';
+      const isCancelled = o.status === '已取消';
+      return `
+      <div class="order-item" style="${isCancelled ? 'opacity:0.45' : ''}${isDone ? 'opacity:0.7' : ''}">
         <div class="order-header">
           <span class="order-id">#${o.id}</span>
-          <span class="order-status status-new">${o.status||'已下单'}</span>
+          <span class="order-status ${isActive ? 'status-new' : isDone ? 'status-done' : ''}" style="${isCancelled ? 'background:#fbe9e7;color:#c62828' : ''}">${o.status||'已下单'}</span>
           <span class="order-total">￥${Number(o.total).toFixed(2)}</span>
         </div>
-        <div class="order-meta">👥 ${o.people||'?'}人就餐 · ${o.time||''}</div>
+        <div class="order-meta">👥 ${o.people||'?'}人 · ${o.time||''}</div>
         <div class="order-dishes">${(o.items||[]).map(i=>`
           <div>· ${i.name} ￥${Number(i.price).toFixed(2)}${i.note ? '<span style="color:#e8452d;font-size:12px"> [备注: '+i.note+']</span>' : ''}</div>
         `).join('')}</div>
         ${o.extraFee > 0 ? `<div style="font-size:12px;color:#999">· 餐位费 ￥${Number(o.extraFee).toFixed(2)}</div>` : ''}
-      </div>`).join('');
+        <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+          ${isActive ? `<button class="btn-done" data-id="${o.id}">✓ 完成</button>` : ''}
+          ${isActive ? `<button class="btn-cancel" data-id="${o.id}">✕ 取消</button>` : ''}
+          ${(isCancelled || isDone) ? `<button class="btn-del" data-id="${o.id}">🗑 删除</button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+
+    // 绑定按钮事件
+    $$('.btn-done').forEach(b => b.addEventListener('click', () => updateOrderStatus(b.dataset.id, 'complete')));
+    $$('.btn-cancel').forEach(b => b.addEventListener('click', () => {
+      if (confirm('确定取消此订单吗？将从营收中扣除。')) updateOrderStatus(b.dataset.id, 'cancel');
+    }));
+    $$('.btn-del').forEach(b => b.addEventListener('click', () => {
+      if (confirm('确定永久删除此订单吗？')) updateOrderStatus(b.dataset.id, 'delete');
+    }));
   } catch(e) { c.innerHTML='<p class="error">加载订单失败</p>'; }
 }
 
 $('#refreshOrders').addEventListener('click', loadOrders);
 
-// ===== 语音播报 =====
+// 更新订单状态
+async function updateOrderStatus(orderId, action) {
+  try {
+    const res = await fetch(`/api/orders/${orderId}?action=${action}`, { method: 'POST' });
+    if (res.ok) {
+      showToast(action === 'complete' ? '订单已完成' : action === 'cancel' ? '订单已取消' : '订单已删除');
+      loadOrders();
+    } else {
+      showToast('操作失败');
+    }
+  } catch(e) { showToast('操作失败'); }
+}
+
+// ===== 语音播报（手机+电脑通用） =====
 let voiceEnabled = true;
 let lastOrderIds = new Set();
+let wakeLock = null;
+
+// 提示音（手机也能听到）
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 800;
+    osc.type = 'sine';
+    gain.gain.value = 0.3;
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    osc.stop(ctx.currentTime + 0.3);
+  } catch(e) {}
+}
 
 function getChineseVoice() {
   if (!('speechSynthesis' in window)) return null;
   const voices = window.speechSynthesis.getVoices();
-  // 优先找中国大陆女声
   let v = voices.find(v => v.lang === 'zh-CN' && v.name.includes('TingTing')) ||
           voices.find(v => v.lang === 'zh-CN' && v.name.includes('Xiaoxiao')) ||
           voices.find(v => v.lang === 'zh-CN' && v.name.includes('Yaoyao')) ||
@@ -165,77 +239,94 @@ function getChineseVoice() {
 
 function speakOrder(order) {
   if (!voiceEnabled) return;
+  playBeep();
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
-  const itemTexts = order.items.map((i, idx) => {
-    let t = `第${idx+1}道，${i.name}`;
-    if (i.note) t += `，备注，${i.note}`;
-    return t;
-  }).join('。');
-  const text = `叮咚！来新订单了！${order.people}位顾客。${itemTexts}。以上，共${order.items.length}道菜，合计${Number(order.total).toFixed(2)}元。`;
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = 'zh-CN';
-  utter.rate = 0.85;
-  utter.pitch = 1.1;
-  utter.volume = 1;
-  const voice = getChineseVoice();
-  if (voice) utter.voice = voice;
-  window.speechSynthesis.speak(utter);
+  setTimeout(() => {
+    const itemTexts = order.items.map((i, idx) => {
+      let t = `第${idx+1}道，${i.name}`;
+      if (i.note) t += `，备注，${i.note}`;
+      return t;
+    }).join('。');
+    const text = `叮咚！来新订单了！${order.people}位顾客。${itemTexts}。以上，共${order.items.length}道菜，合计${Number(order.total).toFixed(2)}元。`;
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'zh-CN';
+    utter.rate = 0.85;
+    utter.pitch = 1.1;
+    utter.volume = 1;
+    const voice = getChineseVoice();
+    if (voice) utter.voice = voice;
+    window.speechSynthesis.speak(utter);
+  }, 300);
 }
 
-// 预加载中文语音列表（某些浏览器需要异步加载）
+// 预加载中文语音
 if ('speechSynthesis' in window) {
   window.speechSynthesis.getVoices();
   window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+  document.addEventListener('click', function initSpeech() {
+    const u = new SpeechSynthesisUtterance('');
+    u.volume = 0; window.speechSynthesis.speak(u);
+  }, { once: true });
 }
 
+// 保持手机屏幕唤醒
+async function requestWakeLock() {
+  try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
+}
+requestWakeLock();
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') requestWakeLock();
+});
+
+// 轮询新订单
 async function pollOrders() {
   try {
     const res = await fetch('/api/orders');
     if (!res.ok) return;
     const orders = await res.json();
+    const st = document.querySelector('.voice-status');
+    if (st) { st.style.display = 'block'; st.textContent = '🔊 监听中 · ' + new Date().toLocaleTimeString('zh-CN'); }
     if (orders.length) {
-      const newOrders = orders.filter(o => !lastOrderIds.has(o.id));
-      newOrders.forEach(o => {
-        lastOrderIds.add(o.id);
-        speakOrder(o);
-      });
-      // 只保留最近的200个订单ID
-      if (lastOrderIds.size > 200) {
-        const ids = [...lastOrderIds].slice(-100);
-        lastOrderIds = new Set(ids);
-      }
-      // 如果当前在订单标签页，自动刷新
-      if ($('#tab-orders').classList.contains('active')) {
-        loadOrders();
-      }
+      const newOrders = orders.filter(o => !lastOrderIds.has(o.id) && o.status === '已下单');
+      newOrders.forEach(o => { lastOrderIds.add(o.id); speakOrder(o); });
+      if (lastOrderIds.size > 200) lastOrderIds = new Set([...lastOrderIds].slice(-100));
+      if ($('#tab-orders').classList.contains('active')) loadOrders();
     }
   } catch(e) {}
 }
 
-// 初始化已知订单
 (async function initOrders() {
   try {
     const res = await fetch('/api/orders');
-    if (res.ok) {
-      const orders = await res.json();
-      orders.forEach(o => lastOrderIds.add(o.id));
-    }
+    if (res.ok) { const orders = await res.json(); orders.forEach(o => lastOrderIds.add(o.id)); }
   } catch(e) {}
-  // 每5秒轮询新订单
   setInterval(pollOrders, 5000);
 })();
 
-// 语音开关按钮
+// 语音状态指示器
+const voiceStatus = document.createElement('div');
+voiceStatus.className = 'voice-status';
+voiceStatus.textContent = '🔊 监听中···';
+document.body.appendChild(voiceStatus);
+
+// 语音开关
 const voiceBtn = document.createElement('button');
-voiceBtn.textContent = '🔊 语音播报：开';
+voiceBtn.className = 'voice-btn';
+voiceBtn.textContent = '🔊 播报：开';
 voiceBtn.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:200;padding:10px 18px;border-radius:20px;border:0;background:#e8452d;color:#fff;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.2)';
 voiceBtn.addEventListener('click', () => {
   voiceEnabled = !voiceEnabled;
-  voiceBtn.textContent = voiceEnabled ? '🔊 语音播报：开' : '🔇 语音播报：关';
+  voiceBtn.textContent = voiceEnabled ? '🔊 播报：开' : '🔇 播报：关';
   voiceBtn.style.background = voiceEnabled ? '#e8452d' : '#999';
+  if (voiceEnabled) { requestWakeLock(); showToast('语音播报已开启，请保持页面在前台'); }
 });
 document.body.appendChild(voiceBtn);
+
+// 手机提示
+if (/Mobi|Android/i.test(navigator.userAgent)) {
+  setTimeout(() => showToast('💡 保持屏幕常亮、勿锁屏，新订单语音自动播报'), 2000);
+}
 
 function showToast(msg) {
   let t = $('.toast');

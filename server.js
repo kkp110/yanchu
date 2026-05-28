@@ -123,6 +123,27 @@ function saveOrder(req, res) {
   });
 }
 
+function updateOrder(req, res) {
+  // URL: /api/orders/xxx?action=complete|cancel|delete
+  const urlParts = req.url.split('/');
+  const orderId = urlParts[urlParts.length - 1].split('?')[0];
+  const action = (req.url.split('?')[1] || '').replace('action=', '');
+  let body = [];
+  req.on('data', chunk => body.push(chunk));
+  req.on('end', () => {
+    try {
+      const orders = readJSON(ORDERS_FILE, []);
+      const idx = orders.findIndex(o => o.id === orderId);
+      if (idx === -1) return sendJSON(res, { ok: false, message: '订单不存在' }, 404);
+      if (action === 'complete') orders[idx].status = '已完成';
+      else if (action === 'cancel') orders[idx].status = '已取消';
+      else if (action === 'delete') orders.splice(idx, 1);
+      fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2), 'utf-8');
+      sendJSON(res, { ok: true, message: '操作成功' });
+    } catch (e) { sendJSON(res, { ok: false, message: '操作失败' }, 400); }
+  });
+}
+
 const server = http.createServer((req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(200, {
@@ -142,6 +163,7 @@ const server = http.createServer((req, res) => {
   if (url === '/api/config' && req.method === 'POST') return saveConfig(req, res);
   if (url === '/api/orders' && req.method === 'GET') return serveOrders(res);
   if (url === '/api/orders' && req.method === 'POST') return saveOrder(req, res);
+  if (url.startsWith('/api/orders/') && (req.method === 'POST' || req.method === 'PUT')) return updateOrder(req, res);
 
   // 静态文件
   let filePath = path.join(ROOT, url === '/' ? 'index.html' : url);
