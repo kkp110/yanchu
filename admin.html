@@ -50,28 +50,58 @@
 
     <!-- 菜品管理 -->
     <div id="tab-menu" class="tab-content active">
-      <section class="admin-panel">
-        <div class="panel-card admin-card">
-          <h2>添加新菜品</h2>
+      <section class="mgmt-section">
+        <!-- 表单卡片 -->
+        <div class="mgmt-form-card" id="formCard">
+          <div class="mgmt-form-header">
+            <h2 id="formTitle">➕ 添加菜品</h2>
+            <button id="cancelEditBtn" style="display:none;background:none;border:0;color:#999;font-size:14px;cursor:pointer">取消</button>
+          </div>
           <form id="itemForm">
-            <label>菜名<input name="name" required /></label>
-            <label>价格<input name="price" type="number" min="0" step="0.01" required /></label>
-            <label>分类<input name="category" placeholder="热菜、冷盘等" required /></label>
-            <label>描述<textarea name="desc" rows="3"></textarea></label>
-            <label>今日是否有货
-              <select name="availableToday">
-                <option value="true">有货</option>
-                <option value="false">售罄</option>
-              </select>
-            </label>
-            <label>菜品图片<input id="imageInput" type="file" accept="image/*" /></label>
-            <button type="submit">保存菜品</button>
+            <div class="mgmt-form-row">
+              <div class="mgmt-field flex-2">
+                <label>菜名</label>
+                <input name="name" placeholder="输入菜名" required />
+              </div>
+              <div class="mgmt-field flex-1">
+                <label>价格（元）</label>
+                <input name="price" type="number" min="0" step="0.01" placeholder="0.00" required />
+              </div>
+            </div>
+            <div class="mgmt-form-row">
+              <div class="mgmt-field flex-1">
+                <label>分类</label>
+                <input name="category" placeholder="热菜、冷盘、干锅等" />
+              </div>
+              <div class="mgmt-field flex-1">
+                <label>状态</label>
+                <select name="availableToday">
+                  <option value="true">✅ 今日有货</option>
+                  <option value="false">❌ 今日售罄</option>
+                </select>
+              </div>
+            </div>
+            <div class="mgmt-field">
+              <label>描述</label>
+              <textarea name="desc" rows="2" placeholder="简短描述口味特色"></textarea>
+            </div>
+            <div class="mgmt-field">
+              <label>图片</label>
+              <div class="img-upload-row">
+                <input id="imageInput" type="file" accept="image/*" />
+                <img id="imgPreview" class="img-preview" style="display:none" />
+              </div>
+            </div>
+            <button type="submit" class="mgmt-submit">💾 保存菜品</button>
           </form>
-          <p class="hint">提交后立即出现在顾客页面。</p>
         </div>
-        <div class="panel-card admin-card">
-          <h2>当前菜品</h2>
-          <div id="itemList" class="item-list"></div>
+
+        <!-- 菜品列表 -->
+        <div class="mgmt-list-card">
+          <div class="mgmt-list-header">
+            <h2>📋 菜品列表 <span id="dishCount" style="font-size:14px;color:#999;font-weight:400"></span></h2>
+          </div>
+          <div id="itemList"></div>
         </div>
       </section>
     </div>

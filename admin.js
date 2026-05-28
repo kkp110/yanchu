@@ -37,36 +37,42 @@ async function loadMenu() {
 
 function renderList() {
   const c = $('#itemList');
-  if (!menu.length) { c.innerHTML = '<p style="color:var(--muted)">暂无菜品，请添加。</p>'; return; }
+  const dCount = $('#dishCount');
+  if (dCount) dCount.textContent = `（${menu.length}道）`;
+  if (!menu.length) {
+    c.innerHTML = '<div style="text-align:center;padding:32px;color:#ccc;font-size:14px">📭 暂无菜品，用上方表单添加第一道菜</div>';
+    return;
+  }
   c.innerHTML = menu.map((item, i) => `
-    <div class="dish-item" style="${!item.availableToday ? 'opacity:0.5' : ''}">
-      <img src="${item.img}" alt="${item.name}" onerror="this.src='images/default.svg'" />
-      <div class="dish-info">
-        <strong>${item.name} ${item.recommended ? '🔥' : ''}</strong>
-        <span>¥${Number(item.price).toFixed(2)} · ${item.category||'未分类'} · ${item.availableToday?'有货':'售罄'}</span>
+    <div class="dish-card-new ${!item.availableToday ? 'dish-off' : ''}">
+      <div class="dish-card-left">
+        <img src="${item.img}" alt="${item.name}" onerror="this.src='images/default.svg'" />
+        <div class="dish-card-info">
+          <div class="dish-card-name">${item.recommended ? '🔥 ' : ''}${item.name}</div>
+          <div class="dish-card-meta">${item.category||'未分类'} · ¥${Number(item.price).toFixed(2)}</div>
+        </div>
       </div>
-      <div class="dish-actions">
-        <button class="btn-toggle-avail" data-idx="${i}" style="padding:5px 10px;border-radius:6px;border:0;font-size:11px;cursor:pointer;background:${item.availableToday?'#e8f5e9':'#fbe9e7'};color:${item.availableToday?'#2e7d32':'#c62828'}">${item.availableToday?'有货':'售罄'}</button>
-        <button class="btn-toggle-rec" data-idx="${i}" style="padding:5px 10px;border-radius:6px;border:0;font-size:11px;cursor:pointer;background:${item.recommended?'#fff3e0':'#f5f5f5'};color:${item.recommended?'#e65100':'#999'}">${item.recommended?'🔥推荐':'推荐'}</button>
-        <button class="btn-edit" data-idx="${i}">编辑</button>
-        <button class="btn-del" data-idx="${i}">删除</button>
+      <div class="dish-card-actions">
+        <button class="chip chip-avail ${item.availableToday?'chip-on':'chip-off'}" data-idx="${i}">${item.availableToday?'有货':'售罄'}</button>
+        <button class="chip chip-rec ${item.recommended?'chip-rec-on':''}" data-idx="${i}">${item.recommended?'🔥':''}推荐</button>
+        <button class="chip chip-edit" data-idx="${i}">✎</button>
+        <button class="chip chip-del" data-idx="${i}">✕</button>
       </div>
     </div>`).join('');
 
-  // 快速切换有货/售罄
-  $$('.btn-toggle-avail').forEach(b => b.addEventListener('click', async () => {
+  // 绑定事件
+  $$('.chip-avail').forEach(b => b.addEventListener('click', async () => {
     const idx = parseInt(b.dataset.idx);
     menu[idx].availableToday = !menu[idx].availableToday;
     await saveMenu();
   }));
-  // 快速切换推荐
-  $$('.btn-toggle-rec').forEach(b => b.addEventListener('click', async () => {
+  $$('.chip-rec').forEach(b => b.addEventListener('click', async () => {
     const idx = parseInt(b.dataset.idx);
     menu[idx].recommended = !menu[idx].recommended;
     await saveMenu();
   }));
-  $$('.btn-edit').forEach(b => b.addEventListener('click', () => editItem(parseInt(b.dataset.idx))));
-  $$('.btn-del').forEach(b => b.addEventListener('click', () => deleteItem(parseInt(b.dataset.idx))));
+  $$('.chip-edit').forEach(b => b.addEventListener('click', () => editItem(parseInt(b.dataset.idx))));
+  $$('.chip-del').forEach(b => b.addEventListener('click', () => deleteItem(parseInt(b.dataset.idx))));
 }
 
 function editItem(idx) {
@@ -75,9 +81,21 @@ function editItem(idx) {
   form.category.value = item.category || ''; form.desc.value = item.desc || '';
   form.availableToday.value = item.availableToday ? 'true' : 'false';
   form.dataset.editIdx = idx;
-  form.querySelector('button').textContent = '更新菜品';
+  form.querySelector('.mgmt-submit').textContent = '💾 更新菜品';
+  $('#formTitle').textContent = '✏️ 编辑菜品';
+  $('#cancelEditBtn').style.display = 'block';
   document.querySelector('.tab-btn[data-tab="tab-menu"]').click();
+  window.scrollTo({ top: $('#formCard').offsetTop - 20, behavior: 'smooth' });
 }
+
+$('#cancelEditBtn').addEventListener('click', () => {
+  $('#itemForm').reset();
+  delete $('#itemForm').dataset.editIdx;
+  $('#itemForm').querySelector('.mgmt-submit').textContent = '💾 保存菜品';
+  $('#formTitle').textContent = '➕ 添加菜品';
+  $('#cancelEditBtn').style.display = 'none';
+  $('#imgPreview').style.display = 'none';
+});
 
 function deleteItem(idx) {
   if (!confirm(`确定删除"${menu[idx].name}"吗？`)) return;
@@ -116,6 +134,11 @@ $('#itemForm').addEventListener('submit', async function(e) {
     form.querySelector('button').textContent = '保存菜品';
   } else { menu.push(dish); }
   await saveMenu(); form.reset(); $('#imageInput').value = '';
+  form.querySelector('.mgmt-submit').textContent = '💾 保存菜品';
+  $('#formTitle').textContent = '➕ 添加菜品';
+  $('#cancelEditBtn').style.display = 'none';
+  delete form.dataset.editIdx;
+  $('#imgPreview').style.display = 'none';
 });
 
 // ===== 订单 =====

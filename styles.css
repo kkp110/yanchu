@@ -591,7 +591,47 @@ body{
   font-size: 14px;
 }
 
-/* ===== 管理后台 ===== */
+/* ===== 管理后台新版 ===== */
+.mgmt-section{
+  max-width:680px;margin:0 auto;padding:12px 12px 40px;
+  display:flex;flex-direction:column;gap:14px;
+}
+.mgmt-form-card,.mgmt-list-card{
+  background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.05);
+}
+.mgmt-form-header{
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;
+}
+.mgmt-form-header h2{margin:0;font-size:18px;font-weight:700}
+.mgmt-form-row{display:flex;gap:12px;margin-bottom:12px}
+.mgmt-field{margin-bottom:12px}
+.mgmt-field label{
+  display:block;font-size:13px;font-weight:600;color:#666;margin-bottom:4px;
+}
+.mgmt-field input,.mgmt-field select,.mgmt-field textarea{
+  width:100%;padding:11px 14px;border-radius:10px;border:1px solid #e0d8d0;
+  font-size:15px;font-family:inherit;outline:none;background:#fafafa;
+  transition:border .2s,background .2s;
+}
+.mgmt-field input:focus,.mgmt-field select:focus,.mgmt-field textarea:focus{
+  border-color:var(--accent);background:#fff;
+}
+.flex-1{flex:1}
+.flex-2{flex:2}
+.img-upload-row{display:flex;align-items:center;gap:12px}
+.img-preview{width:80px;height:60px;object-fit:cover;border-radius:8px;border:1px solid #eee}
+.mgmt-submit{
+  width:100%;padding:14px;border-radius:12px;border:0;
+  background:var(--accent);color:#fff;font-size:16px;font-weight:700;
+  cursor:pointer;margin-top:4px;
+}
+.mgmt-submit:active{background:#c0392b}
+.mgmt-list-header{
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;
+}
+.mgmt-list-header h2{margin:0;font-size:18px;font-weight:700}
+
+/* ===== 管理后台旧版（保留兼容）===== */
 .top-bar{display:flex;align-items:center;gap:10px;padding:10px 12px;max-width:640px;margin:0 auto}
 .admin-link{
   color: var(--accent);
@@ -637,7 +677,35 @@ body{
 }
 .hint{margin-top:8px;font-size:12px;color:var(--muted)}
 
-/* 菜品列表项 */
+/* 新版菜品卡片 */
+.dish-card-new{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;padding:14px;margin-bottom:8px;
+  background:#fafafa;border-radius:14px;border:1px solid #f0ebe4;
+  transition:all .15s;flex-wrap:wrap;
+}
+.dish-card-new:active{background:#f5f0eb}
+.dish-card-new.dish-off{opacity:0.5;background:#f5f5f5}
+.dish-card-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.dish-card-left img{width:56px;height:56px;object-fit:cover;border-radius:10px;flex-shrink:0}
+.dish-card-info{min-width:0}
+.dish-card-name{font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dish-card-meta{font-size:12px;color:var(--muted);margin-top:2px}
+.dish-card-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+/* Chip 按钮 */
+.chip{
+  padding:6px 12px;border-radius:16px;border:0;font-size:12px;font-weight:600;
+  cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.chip:active{transform:scale(0.94)}
+.chip-avail.chip-on{background:#e8f5e9;color:#2e7d32}
+.chip-avail.chip-off{background:#fbe9e7;color:#c62828}
+.chip-rec{background:#f5f5f5;color:#999}
+.chip-rec.chip-rec-on{background:#fff3e0;color:#e65100}
+.chip-edit{background:#f0f0f0;color:#555;font-size:15px;padding:6px 10px}
+.chip-del{background:#fbe9e7;color:#c62828;font-weight:700;font-size:14px;padding:6px 10px}
+
+/* 旧版保留 */
 .dish-item{
   display: flex;
   align-items: center;
