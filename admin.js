@@ -143,7 +143,7 @@ $('#savePaymentQR').addEventListener('click', async function() {
 async function loadOrders() {
   const c = $('#orderListContainer');
   try { const orders = await readFile('orders.json');
-    if (!orders.length) { c.innerHTML='<p style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">暂无订单</p>'; return; }
+    if (!orders.length) { c.innerHTML='<p style="color:#999;text-align:center;padding:30px">暂无订单</p>'; return; }
     c.innerHTML = orders.map(o => `
       <div class="order-item">
         <div class="order-header">
@@ -151,8 +151,11 @@ async function loadOrders() {
           <span class="order-status status-new">${o.status||'已下单'}</span>
           <span class="order-total">￥${Number(o.total).toFixed(2)}</span>
         </div>
-        <div class="order-meta">${o.people||'?'}人就餐 · ${o.time||''}</div>
-        <div class="order-dishes">${(o.items||[]).map(i=>`<div>· ${i.name} ￥${Number(i.price).toFixed(2)}</div>`).join('')}</div>
+        <div class="order-meta">👥 ${o.people||'?'}人就餐 · ${o.time||''}</div>
+        <div class="order-dishes">${(o.items||[]).map(i=>`
+          <div>· ${i.name} ￥${Number(i.price).toFixed(2)}${i.note ? '<span style="color:#e8452d;font-size:12px"> [备注: '+i.note+']</span>' : ''}</div>
+        `).join('')}</div>
+        ${o.extraFee > 0 ? `<div style="font-size:12px;color:#999">· 餐位费 ￥${Number(o.extraFee).toFixed(2)}</div>` : ''}
       </div>`).join('');
   } catch(e) { c.innerHTML='<p class="error">加载订单失败</p>'; }
 }

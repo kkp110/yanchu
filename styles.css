@@ -477,6 +477,9 @@ body{
 .cart-item-info{flex:1;min-width:0}
 .cart-item-info strong{display:block;font-size:14px;font-weight:600}
 .cart-item-info span{font-size:12px;color:var(--muted)}
+.cart-note{font-size:12px;color:#e8452d;display:block;margin-top:2px}
+.cart-note-btn{font-size:11px;color:var(--accent);cursor:pointer;display:inline-block;margin-top:2px;text-decoration:underline}
+.cart-note-btn:active{opacity:0.7}
 .cart-item-qty{display:flex;align-items:center;gap:8px}
 .cart-item-qty button{
   width: 28px;

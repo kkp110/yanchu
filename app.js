@@ -97,16 +97,26 @@ function closeModal(){
 }
 
 function addToCart(item){
-  cart.push({...item});
+  cart.push({...item, note: ''});
   updateCart();
   renderList(menu);
-  showCartToast(item.name + ' 已加入购物车');
+  showCartToast(item.name + ' 已加入');
 }
 
 function removeOne(index){
   cart.splice(index,1);
   updateCart();
   renderList(menu);
+}
+
+function editNote(index){
+  const item = cart[index];
+  const note = prompt('添加备注（如：少辣、不加蒜、多放葱等）', item.note || '');
+  if (note !== null) {
+    item.note = note.trim();
+    updateCart();
+    renderList(menu);
+  }
 }
 
 function updateCart(){
@@ -125,20 +135,24 @@ function updateCart(){
       grouped[item.id].indexes.push(i);
       grouped[item.id].qty++;
     });
-    cartItems.innerHTML = Object.values(grouped).map(g => `
+    cartItems.innerHTML = Object.values(grouped).map(g => {
+      const lastIdx = g.indexes[g.indexes.length - 1];
+      const note = g.item.note || '';
+      return `
       <div class="cart-item">
         <img src="${g.item.img}" alt="${g.item.name}" onerror="this.src='images/default.svg'" />
         <div class="cart-item-info">
           <strong>${g.item.name}</strong>
-          <span>${formatPrice(g.item.price)} × ${g.qty}</span>
+          ${note ? '<span class="cart-note">📝 ' + note + '</span>' : ''}
+          <span class="cart-note-btn" onclick="editNote(${lastIdx})">${note ? '修改备注' : '+ 添加备注'}</span>
         </div>
         <div class="cart-item-qty">
-          <button onclick="removeOne(${g.indexes[g.indexes.length-1]})">−</button>
+          <button onclick="removeOne(${lastIdx})">−</button>
           <span>${g.qty}</span>
           <button onclick="addToCart({id:${g.item.id},name:'${g.item.name.replace(/'/g,"\\'")}',price:${g.item.price},desc:'${(g.item.desc||'').replace(/'/g,"\\'")}',img:'${g.item.img}',availableToday:true,category:'${g.item.category||''}'})">+</button>
         </div>
       </div>
-    `).join('');
+    `}).join('');
   }
   const total = cart.reduce((s,i)=>s+Number(i.price),0);
   cartTotal.textContent = formatPrice(total + Math.max(0, peopleCount-2) * 2);
@@ -156,11 +170,31 @@ function closeCart(){ cartPanel.setAttribute('aria-hidden','true'); cartOverlay.
 
 async function submitOrder(){
   if (!cart.length) return;
-  const items = cart.map(c=>({name:c.name,price:c.price}));
+  const items = cart.map(c=>{
+    const i = { name: c.name, price: c.price };
+    if (c.note) i.note = c.note;
+    return i;
+  });
   const subtotal = cart.reduce((s,i)=>s+Number(i.price),0);
   const extraFee = Math.max(0, peopleCount - 2) * 2;
   const total = subtotal + extraFee;
+
+  // 保存订单到服务器
+  let orderSaved = false;
+  try {
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ people: peopleCount, items, subtotal, extraFee, total })
+    });
+    if (res.ok) orderSaved = true;
+  } catch(e) { console.error('订单保存失败:', e); }
+
   cart = []; updateCart(); renderList(menu); closeCart();
+
+  if (orderSaved) {
+    showCartToast('下单成功！商家已收到订单');
+  }
   payAmount.textContent = '请支付 ' + formatPrice(total) + '（'+peopleCount+'人就餐）';
   if (paymentQR) { payQR.src = paymentQR; payQR.style.display = 'block'; } else { payQR.style.display = 'none'; }
   payModal.setAttribute('aria-hidden','false');
