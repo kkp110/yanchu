@@ -149,23 +149,44 @@ $('#refreshOrders').addEventListener('click', loadOrders);
 let voiceEnabled = true;
 let lastOrderIds = new Set();
 
+function getChineseVoice() {
+  if (!('speechSynthesis' in window)) return null;
+  const voices = window.speechSynthesis.getVoices();
+  // 优先找中国大陆女声
+  let v = voices.find(v => v.lang === 'zh-CN' && v.name.includes('TingTing')) ||
+          voices.find(v => v.lang === 'zh-CN' && v.name.includes('Xiaoxiao')) ||
+          voices.find(v => v.lang === 'zh-CN' && v.name.includes('Yaoyao')) ||
+          voices.find(v => v.lang === 'zh-CN') ||
+          voices.find(v => v.lang.startsWith('zh-')) ||
+          voices.find(v => v.lang === 'zh-HK') ||
+          voices.find(v => v.lang === 'zh-TW');
+  return v || null;
+}
+
 function speakOrder(order) {
   if (!voiceEnabled) return;
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-    const itemTexts = order.items.map((i, idx) => {
-      let t = `第${idx+1}道，${i.name}`;
-      if (i.note) t += `，备注，${i.note}`;
-      return t;
-    }).join('。');
-    const text = `叮咚！来新订单了！${order.people}位顾客。${itemTexts}。以上，共${order.items.length}道菜，合计${Number(order.total).toFixed(2)}元。`;
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = 'zh-CN';
-    utter.rate = 0.85;
-    utter.pitch = 1.1;
-    utter.volume = 1;
-    window.speechSynthesis.speak(utter);
-  }
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const itemTexts = order.items.map((i, idx) => {
+    let t = `第${idx+1}道，${i.name}`;
+    if (i.note) t += `，备注，${i.note}`;
+    return t;
+  }).join('。');
+  const text = `叮咚！来新订单了！${order.people}位顾客。${itemTexts}。以上，共${order.items.length}道菜，合计${Number(order.total).toFixed(2)}元。`;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'zh-CN';
+  utter.rate = 0.85;
+  utter.pitch = 1.1;
+  utter.volume = 1;
+  const voice = getChineseVoice();
+  if (voice) utter.voice = voice;
+  window.speechSynthesis.speak(utter);
+}
+
+// 预加载中文语音列表（某些浏览器需要异步加载）
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
 }
 
 async function pollOrders() {
