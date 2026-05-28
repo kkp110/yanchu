@@ -1,9 +1,6 @@
 let menu = [];
-let githubToken = localStorage.getItem('yanchu_token') || '';
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
-
-const GITHUB_API = 'https://api.github.com/repos/kkp110/yanchu/contents';
 
 // Tab 切换
 $$('.tab-btn').forEach(btn => {
@@ -16,39 +13,21 @@ $$('.tab-btn').forEach(btn => {
   });
 });
 
-// ===== GitHub API 读写 =====
+// ===== 数据读写（本地服务器API） =====
 async function readFile(path) {
   const r = await fetch(`${path}?${Date.now()}`);
   if (!r.ok) throw new Error('读取失败');
   return await r.json();
 }
 
-async function writeFile(path, data) {
-  if (!githubToken) { showToast('请先设置 GitHub Token'); return false; }
-  // 先获取当前文件的 SHA
-  const getRes = await fetch(`${GITHUB_API}/${path}`, {
-    headers: { 'Authorization': 'Bearer ' + githubToken, 'Accept': 'application/vnd.github+json' }
+async function apiPost(url, data) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
   });
-  if (!getRes.ok) { showToast('Token 无效或无权限'); return false; }
-  const info = await getRes.json();
-  const sha = info.sha;
-
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
-  const putRes = await fetch(`${GITHUB_API}/${path}`, {
-    method: 'PUT',
-    headers: { 'Authorization': 'Bearer ' + githubToken, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github+json' },
-    body: JSON.stringify({ message: '更新 ' + path, content: content, sha: sha })
-  });
-  if (!putRes.ok) { showToast('保存失败'); return false; }
-  return true;
-}
-
-// ===== Token 管理 =====
-function checkToken() {
-  if (!githubToken || githubToken.length < 10) {
-    githubToken = prompt('请输入 GitHub Personal Access Token（仅保存在本浏览器）:\n\n获取方式: github.com → Settings → Developer settings → Personal access tokens → Generate new token (classic) → 勾选 repo 权限', githubToken || '');
-    if (githubToken) { localStorage.setItem('yanchu_token', githubToken); showToast('Token 已保存'); }
-  }
+  if (!res.ok) throw new Error('请求失败');
+  return await res.json();
 }
 
 // ===== 菜单管理 =====
@@ -106,13 +85,15 @@ function deleteItem(idx) {
 }
 
 async function saveMenu() {
-  checkToken();
-  const ok = await writeFile('menu.json', menu);
-  if (ok) { renderList(); showToast('菜单已保存（约5秒后生效）'); }
+  try {
+    await apiPost('/api/menu', menu);
+    renderList();
+    showToast('菜单已保存');
+  } catch(e) { showToast('保存失败: ' + e.message); }
 }
 
 $('#itemForm').addEventListener('submit', async function(e) {
-  e.preventDefault(); checkToken();
+  e.preventDefault();
   const form = e.target;
   const name = form.name.value.trim();
   const price = parseFloat(form.price.value);
